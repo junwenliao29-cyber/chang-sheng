@@ -77,6 +77,7 @@ create table if not exists public.events (
   id bigint generated always as identity primary key,
   type text not null check (type in ('view', 'order')),
   session_id text,
+  amount_clp integer default 0,
   created_at timestamptz not null default now()
 );
 create index if not exists idx_events_created on public.events(created_at);

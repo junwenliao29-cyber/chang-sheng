@@ -28,22 +28,41 @@
     const p = (n) => (n < 10 ? "0" + n : "" + n);
     return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate());
   }
-  // 记录访问/下单：同一个浏览器同一天只记一次，避免刷新重复计数
-  function trackEvent(type) {
-    let client = null;
-    try { client = window.Data && window.Data.getClient ? window.Data.getClient() : null; } catch (e) {}
-    if (!client) return;
+  // 购物车里这单的金额（按菜单价估算）
+  function cartOrderAmount() {
+    return cart.reduce((s, it) => s + (Number(it.price_clp) || 0) * it.qty, 0);
+  }
+  // 记录访问/下单：同一浏览器同一天只记一次；用 keepalive 保证跳转页面时也能送达
+  function trackEvent(type, amount) {
+    const cfg = window.APP_CONFIG || {};
+    if (!cfg.supabaseUrl || !cfg.supabaseAnonKey) return;
     const flag = "cs_" + type + "_" + todayLocalKey();
+    try { if (localStorage.getItem(flag)) return; } catch (e) {}
+    const payload = { type: type, session_id: getSessionId() };
+    if (type === "order" && amount) payload.amount_clp = amount;
+    const url = String(cfg.supabaseUrl).replace(/\/+$/, "") + "/rest/v1/events";
+    const headers = {
+      apikey: cfg.supabaseAnonKey,
+      Authorization: "Bearer " + cfg.supabaseAnonKey,
+      "Content-Type": "application/json",
+      Prefer: "return=minimal",
+    };
+    const mark = (ok) => { if (ok) { try { localStorage.setItem(flag, "1"); } catch (e2) {} } };
     try {
-      if (localStorage.getItem(flag)) return;
-      client
-        .from("events")
-        .insert({ type: type, session_id: getSessionId() })
-        .then((res) => {
-          if (!res.error) { try { localStorage.setItem(flag, "1"); } catch (e2) {} }
-        })
+      fetch(url, { method: "POST", headers: headers, body: JSON.stringify(payload), keepalive: true })
+        .then((r) => mark(r.ok || r.status === 201 || r.status === 200))
         .catch(() => {});
     } catch (e) { /* 统计失败不影响正常使用 */ }
+  }
+  // 下单成功后提示：可修改后重新发送
+  function showSentNote(isRetiro, num) {
+    const el = $("#sentNote");
+    if (!el) return;
+    const base = "Puedes cambiar cantidades o datos y pulsar enviar de nuevo.";
+    el.textContent = isRetiro && num
+      ? "✅ Tu pedido se abrió en WhatsApp con tu Nº #" + num + ". " + base
+      : "✅ Tu pedido se abrió en WhatsApp. " + base;
+    el.classList.remove("hidden");
   }
 
   /* ---------------- 购物车 localStorage ---------------- */
@@ -380,13 +399,14 @@
       });
 
       const url = U.waLink(phone, msg);
-      trackEvent("order");
+      trackEvent("order", cartOrderAmount());
       // 自取取号发生在异步之后，用同页跳转避免浏览器拦截弹窗
       if (isRetiro) {
         window.location.href = url;
       } else {
         window.open(url, "_blank", "noopener");
       }
+      showSentNote(isRetiro, orderNumber);
     });
   }
 

@@ -287,6 +287,11 @@ footer .container { padding: 26px 18px 20px; }
 }
 .radio-chip.active { border-color: var(--red); background: #fdeeee; color: var(--red); }
 .order-foot { padding: 12px 18px 20px; }
+.sent-note {
+  background: #e6f7ea; color: #1e6b24; border: 1px solid #b9e3c2;
+  border-radius: 10px; padding: 9px 12px; font-size: 13px; line-height: 1.5;
+  margin-bottom: 10px;
+}
 .total-row { display: flex; justify-content: space-between; font-size: 15px; margin-bottom: 10px; }
 .total-row b { font-size: 18px; color: var(--red); }
 

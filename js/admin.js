@@ -96,7 +96,7 @@
       const since = new Date(Date.now() - 60 * 24 * 3600 * 1000).toISOString();
       const { data, error } = await client
         .from("events")
-        .select("type, created_at")
+        .select("type, created_at, amount_clp")
         .gte("created_at", since)
         .limit(10000)
         .order("created_at", { ascending: true });
@@ -104,9 +104,14 @@
       renderStats(data || []);
     } catch (e) {
       const msg = errMsg(e);
-      const friendly = /events|relation|does not exist|not exist|underlying/i.test(msg)
-        ? "统计功能还没开启：请在 Supabase SQL Editor 里运行 supabase/migration-stats.sql 那段 SQL，然后点“刷新”。"
-        : "加载统计失败：" + msg;
+      let friendly;
+      if (/amount_clp|column.*does not exist|does not exist.*column/i.test(msg)) {
+        friendly = "统计表还缺“金额”字段：请在 Supabase SQL Editor 运行最新统计 SQL（给 events 表加 amount_clp）后点刷新。";
+      } else if (/events|relation|does not exist|not exist|underlying/i.test(msg)) {
+        friendly = "统计功能还没开启：请在 Supabase SQL Editor 里运行 supabase/migration-stats.sql 那段 SQL，然后点“刷新”。";
+      } else {
+        friendly = "加载统计失败：" + msg;
+      }
       if (errEl) { errEl.textContent = friendly; errEl.classList.remove("hidden"); }
       const clear = (id) => { const el = $(id); if (el) el.innerHTML = ""; };
       clear("#statsSummary"); clear("#statsDaysWrap"); clear("#statsHoursWrap");
@@ -115,29 +120,36 @@
     }
   }
   function renderStats(rows) {
+    function money(n) { return U.formatCLP(n); }
     const now = new Date();
     const today = dayKey(now);
     const days = {};
     const hours = new Array(24).fill(0);
-    let views = 0, orders = 0;
+    let views = 0, orders = 0, sales = 0;
     rows.forEach(function (r) {
       if (!r || !r.type) return;
       const d = new Date(r.created_at);
       if (isNaN(d.getTime())) return;
       const k = dayKey(d);
-      if (!days[k]) days[k] = { views: 0, orders: 0 };
-      if (r.type === "order") { days[k].orders += 1; orders += 1; }
-      else { days[k].views += 1; views += 1; hours[d.getHours()] += 1; }
+      if (!days[k]) days[k] = { views: 0, orders: 0, amount: 0 };
+      if (r.type === "order") {
+        const amt = Number(r.amount_clp) || 0;
+        days[k].orders += 1; days[k].amount += amt;
+        orders += 1; sales += amt;
+      } else {
+        days[k].views += 1; views += 1; hours[d.getHours()] += 1;
+      }
     });
-    const tv = days[today] ? days[today].views : 0;
-    const to = days[today] ? days[today].orders : 0;
+    const td = days[today] || { views: 0, orders: 0, amount: 0 };
     const rate = views > 0 ? (orders / views * 100) : 0;
 
     const cards = [
-      { n: tv, l: "今日访问（人）" },
-      { n: to, l: "今日下单（次）" },
+      { n: td.views, l: "今日访问（人）" },
+      { n: td.orders, l: "今日下单（次）" },
+      { n: money(td.amount), l: "今日销售额", gold: true },
       { n: views, l: "近 60 天访问（人）" },
       { n: orders, l: "近 60 天下单（次）" },
+      { n: money(sales), l: "近 60 天销售额", gold: true },
       { n: rate.toFixed(1) + "%", l: "下单率（订单 ÷ 访问）", gold: true },
     ];
     $("#statsSummary").innerHTML = cards.map(function (c) {
@@ -152,13 +164,13 @@
     }
     const maxDay = Math.max(1, ...last14.map((k) => (days[k] ? days[k].views : 0)));
     $("#statsDaysWrap").innerHTML =
-      '<table class="stat-days"><thead><tr><th>日期</th><th>访问</th><th class="bar-cell"></th><th>下单</th></tr></thead><tbody>' +
+      '<table class="stat-days"><thead><tr><th>日期</th><th>访问</th><th class="bar-cell"></th><th>下单</th><th>销售额</th></tr></thead><tbody>' +
       last14.map(function (k) {
-        const v = days[k] ? days[k].views : 0;
-        const o = days[k] ? days[k].orders : 0;
-        const w = Math.max(1.5, Math.round(v / maxDay * 100));
-        return "<tr><td>" + k + (k === today ? "（今天）" : "") + "</td><td><b>" + v + "</b></td>" +
-          '<td class="bar-cell"><div class="bar"><i style="width:' + w + '%"></i></div></td><td>' + o + "</td></tr>";
+        const d2 = days[k] || { views: 0, orders: 0, amount: 0 };
+        const w = Math.max(1.5, Math.round(d2.views / maxDay * 100));
+        return "<tr><td>" + k + (k === today ? "（今天）" : "") + "</td><td><b>" + d2.views + "</b></td>" +
+          '<td class="bar-cell"><div class="bar"><i style="width:' + w + '%"></i></div></td><td>' + d2.orders + "</td>" +
+          "<td>" + money(d2.amount) + "</td></tr>";
       }).join("") + "</tbody></table>";
 
     const maxH = Math.max(1, ...hours);
