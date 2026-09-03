@@ -11,8 +11,12 @@
 
   const state = {
     orderType: "retiro", // retiro | despacho
+    locationUrl: null,   // despacho 的“当前位置”Google Maps 链接
   };
   let lastOrderNumber = null; // 记住本次取餐号：顾客改单重发时沿用同一号码
+  let justSent = false;       // 下单成功后清空购物车并显示感谢语
+  const CART_EMPTY_DEFAULT = '<div class="big">🍽️</div>Tu carrito está vacío.<br />Agrega algunos platos del menú.';
+  const CART_EMPTY_THANKS = '<div class="big">✅</div>¡Pedido enviado por WhatsApp!<br />Gracias 🧡 Si quieres hacer otro pedido, agrega platos de nuevo.';
 
   /* ---------------- 访问 / 下单统计 ---------------- */
   function getSessionId() {
@@ -114,6 +118,19 @@
     const wa = $("#contactWa");
     if (wa) wa.href = U.waLink(phone, "Hola! Quiero información sobre el menú.");
 
+    // 联系卡：Google Maps 位置链接（后台“店铺设置”填写）
+    const mapWrap = $("#contactMapWrap");
+    const mapLink = $("#contactMapLink");
+    if (mapWrap && mapLink) {
+      const map = s.map_link || "";
+      if (map && /^https?:\/\//i.test(map)) {
+        mapLink.href = map;
+        mapWrap.classList.remove("hidden");
+      } else {
+        mapWrap.classList.add("hidden");
+      }
+    }
+
     // 演示模式提示
     const demo = $("#demoBar");
     if (demo) demo.classList.toggle("hidden", window.Data.isSupabaseConfigured());
@@ -204,6 +221,7 @@
 
     if (!count) {
       linesEl.innerHTML = "";
+      emptyEl.innerHTML = justSent ? CART_EMPTY_THANKS : CART_EMPTY_DEFAULT;
       emptyEl.classList.remove("hidden");
       orderArea.classList.add("hidden");
       return;
@@ -246,6 +264,7 @@
   function addDish(id) {
     const dish = menu.dishes.find((d) => d.id === id);
     if (!dish || dish.available === false) return;
+    if (justSent) justSent = false;
     const found = cart.find((it) => it.dishId === id);
     if (found) found.qty += 1;
     else
@@ -282,8 +301,16 @@
 
   /* ---------------- 下单表单 ---------------- */
   /* ---------------- 下单表单：自取=取餐号 / 配送=名字 ---------------- */
+  function resetLocation() {
+    state.locationUrl = null;
+    const st = $("#locStatus");
+    if (st) st.textContent = "";
+    const b = $("#locBtn");
+    if (b) b.disabled = false;
+  }
   // 根据“自取/配送”切换显示：自取显示取餐号，配送显示姓名+地址
   function applyOrderTypeUI() {
+    resetLocation();
     const isRetiro = state.orderType === "retiro";
     $("#nameField").classList.toggle("hidden", isRetiro);
     $("#numField").classList.toggle("hidden", !isRetiro);
@@ -332,6 +359,33 @@
       });
     });
 
+    // “用我的当前位置”：生成 Google Maps 链接（配送必填）
+    $("#locBtn").addEventListener("click", () => {
+      const st = $("#locStatus");
+      const btn = $("#locBtn");
+      if (!navigator.geolocation) {
+        st.textContent = "Este navegador no soporta ubicación. Escribe la dirección por favor.";
+        return;
+      }
+      btn.disabled = true;
+      st.textContent = "⏳ Obteniendo tu ubicación…";
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const lat = pos.coords.latitude.toFixed(6);
+          const lng = pos.coords.longitude.toFixed(6);
+          state.locationUrl = "https://maps.google.com/?q=" + lat + "," + lng;
+          st.innerHTML = '✅ Ubicación obtenida — <a href="' + state.locationUrl + '" target="_blank" rel="noopener">ver en el mapa</a>';
+          btn.disabled = false;
+        },
+        () => {
+          state.locationUrl = null;
+          btn.disabled = false;
+          st.textContent = "No pudimos obtener tu ubicación (permiso denegado o sin señal). Inténtalo de nuevo o escribe tu dirección.";
+        },
+        { enableHighAccuracy: true, timeout: 12000 }
+      );
+    });
+
     // 提交订单
     let submitting = false;
     $("#waOrderBtn").addEventListener("click", async function () {
@@ -350,13 +404,18 @@
           return;
         }
       }
-      // 配送：需要地址
+      // 配送：需要“地址 + 当前位置”两项
       let address = "";
       if (state.orderType === "despacho") {
         address = $("#custAddr").value.trim();
         if (!address) {
           alert("Por favor escribe tu dirección de entrega."); // eslint-disable-line no-alert
           $("#custAddr").focus();
+          return;
+        }
+        if (!state.locationUrl) {
+          alert("Por favor toca “Usar mi ubicación actual” para enviar también tu ubicación."); // eslint-disable-line no-alert
+          $("#locBtn").focus();
           return;
         }
       }
@@ -400,19 +459,30 @@
         name: name,
         type: state.orderType === "despacho" ? "Despacho a domicilio" : "Retiro en local",
         address: address,
+        location: state.locationUrl,
         note: note,
         orderNumber: orderNumber,
       });
 
       const url = U.waLink(phone, msg);
       trackEvent("order", cartOrderAmount());
+      // 下单成功后清空购物车，避免客人误操作或重复下单
+      cart = [];
+      saveCart();
+      justSent = true;
+      lastOrderNumber = null;
+      resetLocation();
+      const nameIn = $("#custName"); if (nameIn) nameIn.value = "";
+      const addrIn = $("#custAddr"); if (addrIn) addrIn.value = "";
+      const noteIn = $("#custNote"); if (noteIn) noteIn.value = "";
+      const numIn = $("#custNum"); if (numIn) numIn.value = "";
+      renderCart();
       // 自取取号发生在异步之后，用同页跳转避免浏览器拦截弹窗
       if (isRetiro) {
         window.location.href = url;
       } else {
         window.open(url, "_blank", "noopener");
       }
-      showSentNote(isRetiro, orderNumber);
     });
   }
 

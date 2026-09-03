@@ -117,6 +117,9 @@
           <div class="ic">📍</div>
           <h3>Dirección / Retiro</h3>
           <p id="contactAddress">—</p>
+          <p id="contactMapWrap" class="hidden" style="margin:8px 0 0;">
+            <a id="contactMapLink" href="#" target="_blank" rel="noopener" style="font-weight:700;">🗺️ Cómo llegar · Google Maps</a>
+          </p>
         </div>
         <div class="info-card">
           <div class="ic">🕐</div>
@@ -193,6 +196,10 @@
         <div class="field" id="addrField">
           <label id="addrLabel" for="custAddr">Dirección de entrega *</label>
           <textarea id="custAddr" rows="2" placeholder="Ej: Av. Providencia 1234, depto 5, Santiago"></textarea>
+          <div style="margin-top:9px;">
+            <button type="button" class="loc-btn" id="locBtn">📍 Usar mi ubicación actual</button>
+            <p class="small muted" id="locStatus" style="margin:5px 0 0;line-height:1.5;"></p>
+          </div>
         </div>
         <div class="field">
           <label for="custNote">Nota (opcional)</label>

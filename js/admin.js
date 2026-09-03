@@ -458,6 +458,7 @@
     $("#set_store_name").value = settingsMap.store_name || "";
     $("#set_whatsapp").value = settingsMap.whatsapp_number || "";
     $("#set_address").value = settingsMap.address || "";
+    $("#set_map_link").value = settingsMap.map_link || "";
     $("#set_hours").value = settingsMap.hours || "";
     $("#set_announcement").value = settingsMap.announcement || "";
   }
@@ -467,6 +468,7 @@
       ["store_name", $("#set_store_name").value.trim()],
       ["whatsapp_number", $("#set_whatsapp").value.trim()],
       ["address", $("#set_address").value.trim()],
+      ["map_link", $("#set_map_link").value.trim()],
       ["hours", $("#set_hours").value.trim()],
       ["announcement", $("#set_announcement").value.trim()],
     ];

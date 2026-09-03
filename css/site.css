@@ -286,6 +286,12 @@ footer .container { padding: 26px 18px 20px; }
   border-radius: 10px; cursor: pointer; font-size: 13.5px; font-weight: 600; background: #fff;
 }
 .radio-chip.active { border-color: var(--red); background: #fdeeee; color: var(--red); }
+.loc-btn {
+  background: #fff; color: var(--red); border: 1.5px solid var(--red);
+  border-radius: 999px; padding: 8px 16px; font-size: 13px; font-weight: 700; cursor: pointer;
+}
+.loc-btn:hover { background: var(--red); color: #fff; }
+.loc-btn:disabled { opacity: .6; cursor: wait; }
 .order-foot { padding: 12px 18px 20px; }
 .sent-note {
   background: #e6f7ea; color: #1e6b24; border: 1px solid #b9e3c2;

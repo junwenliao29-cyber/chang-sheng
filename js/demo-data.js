@@ -8,6 +8,7 @@ window.DEMO_DATA = {
     store_name: "昌盛 CHANG SHENG",
     whatsapp_number: "56954663415",
     address: "Dirección del local — pendiente de configurar",
+    map_link: "",
     hours: "12:00 – 22:00",
     announcement: "",
   },

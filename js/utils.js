@@ -46,6 +46,7 @@ window.Utils = (function () {
       "\n\n" + (info.orderNumber ? "Nº de pedido: *#" + info.orderNumber + "*" : "Nombre: " + (info.name || "")) +
       "\nTipo: " + (info.type || "");
     if (info.address) msg += "\nDirección: " + info.address;
+    if (info.location) msg += "\nUbicación: " + info.location;
     if (info.note) msg += "\nNota: " + info.note;
     msg += "\n\nEl total te lo confirmamos por WhatsApp. ¡Gracias!";
     return msg;
