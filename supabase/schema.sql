@@ -100,3 +100,24 @@ create policy "dish-images auth update" on storage.objects
   for update to authenticated using (bucket_id = 'dish-images');
 create policy "dish-images auth delete" on storage.objects
   for delete to authenticated using (bucket_id = 'dish-images');
+
+-- ============================================================
+-- 自取取餐号计数器（原子递增，顾客点 WhatsApp 下单时取号）
+-- ============================================================
+create table if not exists public.order_counter (
+  id integer primary key default 1 check (id = 1),
+  n integer not null default 0
+);
+insert into public.order_counter (id, n) values (1, 0)
+on conflict (id) do nothing;
+alter table public.order_counter enable row level security;
+create or replace function public.next_order_number()
+returns integer
+language sql
+security definer
+set search_path = public
+as $$
+  update public.order_counter set n = n + 1 where id = 1 returning n;
+$$;
+revoke all on function public.next_order_number() from public;
+grant execute on function public.next_order_number() to anon, authenticated;

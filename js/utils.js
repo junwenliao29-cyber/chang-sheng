@@ -38,12 +38,12 @@ window.Utils = (function () {
 
   // 生成发送到 WhatsApp 的订单文本（不写价格，由老板自己算总账）
   // lines: 数组，如 ["1. Arroz Chaufa x2", ...]
-  // info:  { name, type, address, note }
+  // info:  { name, type, address, note, orderNumber }
   function buildOrderText(storeName, lines, info) {
     let msg =
       "Hola " + storeName + "! Quiero hacer un pedido:\n\n" +
       lines.join("\n") +
-      "\n\nNombre: " + (info.name || "") +
+      "\n\n" + (info.orderNumber ? "Nº de pedido: #" + info.orderNumber : "Nombre: " + (info.name || "")) +
       "\nTipo: " + (info.type || "");
     if (info.address) msg += "\nDirección: " + info.address;
     if (info.note) msg += "\nNota: " + info.note;

@@ -261,36 +261,76 @@
   }
 
   /* ---------------- 下单表单 ---------------- */
+  /* ---------------- 下单表单：自取=取餐号 / 配送=名字 ---------------- */
+  // 根据“自取/配送”切换显示：自取显示取餐号，配送显示姓名+地址
+  function applyOrderTypeUI() {
+    const isRetiro = state.orderType === "retiro";
+    $("#nameField").classList.toggle("hidden", isRetiro);
+    $("#numField").classList.toggle("hidden", !isRetiro);
+    $("#custNum").value = "";
+    const addr = $("#addrField");
+    const input = $("#custAddr");
+    if (isRetiro) {
+      addr.classList.add("hidden");
+      $("#addrLabel").textContent = "Dirección de entrega";
+      input.removeAttribute("required");
+      $("#custName").removeAttribute("required");
+    } else {
+      addr.classList.remove("hidden");
+      $("#addrLabel").textContent = "Dirección de entrega *";
+      input.setAttribute("required", "required");
+      $("#custName").setAttribute("required", "required");
+    }
+    document.querySelectorAll(".radio-chip").forEach((c) =>
+      c.classList.toggle("active", c.getAttribute("data-type") === state.orderType)
+    );
+  }
+
+  // 取号：连接数据库时用服务器原子计数器（不重复不乱序）；
+  // 演示模式（未连数据库）则用本机临时计数，仅供预览
+  async function allocateOrderNumber() {
+    let client = null;
+    try { client = window.Data && window.Data.getClient ? window.Data.getClient() : null; } catch (e) {}
+    if (client) {
+      const { data, error } = await client.rpc("next_order_number");
+      if (error) throw error;
+      return Number(data);
+    }
+    let n = 0;
+    try { n = parseInt(localStorage.getItem("cs_demo_num") || "0", 10) || 0; } catch (e) {}
+    n += 1;
+    try { localStorage.setItem("cs_demo_num", String(n)); } catch (e) {}
+    return n;
+  }
+
   function bindOrderForm() {
     // 自取 / 配送切换
     document.querySelectorAll(".radio-chip").forEach((chip) => {
       chip.addEventListener("click", function () {
         state.orderType = this.getAttribute("data-type");
-        document.querySelectorAll(".radio-chip").forEach((c) => c.classList.toggle("active", c === this));
-        const addr = $("#addrField");
-        const label = $("#addrLabel");
-        const input = $("#custAddr");
-        if (state.orderType === "despacho") {
-          addr.classList.remove("hidden");
-          label.textContent = "Dirección de entrega *";
-          input.placeholder = "Ej: Av. Providencia 1234, depto 5, Santiago";
-          input.setAttribute("required", "required");
-        } else {
-          addr.classList.add("hidden");
-          label.textContent = "Dirección de entrega";
-          input.removeAttribute("required");
-        }
+        applyOrderTypeUI();
       });
     });
 
     // 提交订单
-    $("#waOrderBtn").addEventListener("click", function () {
-      const name = $("#custName").value.trim();
-      if (!name) {
-        alert("Por favor escribe tu nombre."); // eslint-disable-line no-alert
-        $("#custName").focus();
-        return;
+    let submitting = false;
+    $("#waOrderBtn").addEventListener("click", async function () {
+      if (submitting) return;
+      const btn = this;
+      const origText = btn.textContent;
+      const isRetiro = state.orderType === "retiro";
+
+      // 配送：需要姓名
+      let name = "";
+      if (!isRetiro) {
+        name = $("#custName").value.trim();
+        if (!name) {
+          alert("Por favor escribe tu nombre."); // eslint-disable-line no-alert
+          $("#custName").focus();
+          return;
+        }
       }
+      // 配送：需要地址
       let address = "";
       if (state.orderType === "despacho") {
         address = $("#custAddr").value.trim();
@@ -301,6 +341,28 @@
         }
       }
       const note = $("#custNote").value.trim();
+
+      // 自取：先取号（只有真正点了“WhatsApp 下单”才 +1）
+      let orderNumber = null;
+      if (isRetiro) {
+        submitting = true;
+        btn.disabled = true;
+        btn.textContent = "⏳ Asignando número…";
+        let got = null;
+        try {
+          got = await allocateOrderNumber();
+        } catch (e) { got = null; }
+        submitting = false;
+        btn.disabled = false;
+        btn.textContent = origText;
+        if (got === null || got === undefined || isNaN(got)) {
+          alert("No se pudo asignar tu número de pedido. Revisa tu conexión e inténtalo de nuevo."); // eslint-disable-line no-alert
+          return;
+        }
+        orderNumber = got;
+        $("#custNum").value = "#" + orderNumber;
+      }
+
       const lines = cart.map(
         (it, i) => i + 1 + ". " + it.name_es + " x" + it.qty
       );
@@ -313,11 +375,17 @@
         type: state.orderType === "despacho" ? "Despacho a domicilio" : "Retiro en local",
         address: address,
         note: note,
+        orderNumber: orderNumber,
       });
 
       const url = U.waLink(phone, msg);
-      window.open(url, "_blank", "noopener");
       trackEvent("order");
+      // 自取取号发生在异步之后，用同页跳转避免浏览器拦截弹窗
+      if (isRetiro) {
+        window.location.href = url;
+      } else {
+        window.open(url, "_blank", "noopener");
+      }
     });
   }
 
@@ -354,6 +422,7 @@
     $("#year").textContent = new Date().getFullYear();
     bindEvents();
     bindOrderForm();
+    applyOrderTypeUI();
 
     try {
       menu = await window.Data.loadMenu();

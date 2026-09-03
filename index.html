@@ -163,9 +163,14 @@
     <div id="orderArea" class="order-area hidden">
       <form id="orderForm" class="order-form" novalidate>
         <h3>Datos del pedido</h3>
-        <div class="field">
+        <div class="field" id="nameField">
           <label for="custName">Tu nombre *</label>
           <input id="custName" type="text" autocomplete="name" placeholder="Ej: María Pérez" required />
+        </div>
+        <div class="field hidden" id="numField">
+          <label for="custNum">Número de pedido</label>
+          <input id="custNum" type="text" readonly placeholder="—" value="" />
+          <p class="small muted" style="margin:4px 0 0;">Te damos un número al enviar el pedido por WhatsApp. Anótalo y dilo al retirar. 😊</p>
         </div>
         <div class="field">
           <label>Tipo de pedido</label>
