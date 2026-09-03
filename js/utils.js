@@ -43,7 +43,7 @@ window.Utils = (function () {
     let msg =
       "Hola " + storeName + "! Quiero hacer un pedido:\n\n" +
       lines.join("\n") +
-      "\n\n" + (info.orderNumber ? "Nº de pedido: #" + info.orderNumber : "Nombre: " + (info.name || "")) +
+      "\n\n" + (info.orderNumber ? "Nº de pedido: *#" + info.orderNumber + "*" : "Nombre: " + (info.name || "")) +
       "\nTipo: " + (info.type || "");
     if (info.address) msg += "\nDirección: " + info.address;
     if (info.note) msg += "\nNota: " + info.note;

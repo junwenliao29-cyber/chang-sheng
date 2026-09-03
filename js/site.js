@@ -363,8 +363,9 @@
         $("#custNum").value = "#" + orderNumber;
       }
 
+      // WhatsApp 消息格式：*数量 菜名*（例如 *2 Carne Mongoliana con arroz*）
       const lines = cart.map(
-        (it, i) => i + 1 + ". " + it.name_es + " x" + it.qty
+        (it) => "*" + it.qty + " " + it.name_es + "*"
       );
       const s = menu.settings || {};
       const storeName = s.store_name || "CHANG SHENG";
