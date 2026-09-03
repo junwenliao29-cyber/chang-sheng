@@ -13,6 +13,39 @@
     orderType: "retiro", // retiro | despacho
   };
 
+  /* ---------------- 访问 / 下单统计 ---------------- */
+  function getSessionId() {
+    let sid = null;
+    try { sid = localStorage.getItem("cs_sid"); } catch (e) {}
+    if (!sid) {
+      sid = "s" + Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+      try { localStorage.setItem("cs_sid", sid); } catch (e) {}
+    }
+    return sid;
+  }
+  function todayLocalKey() {
+    const d = new Date();
+    const p = (n) => (n < 10 ? "0" + n : "" + n);
+    return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate());
+  }
+  // 记录访问/下单：同一个浏览器同一天只记一次，避免刷新重复计数
+  function trackEvent(type) {
+    let client = null;
+    try { client = window.Data && window.Data.getClient ? window.Data.getClient() : null; } catch (e) {}
+    if (!client) return;
+    const flag = "cs_" + type + "_" + todayLocalKey();
+    try {
+      if (localStorage.getItem(flag)) return;
+      client
+        .from("events")
+        .insert({ type: type, session_id: getSessionId() })
+        .then((res) => {
+          if (!res.error) { try { localStorage.setItem(flag, "1"); } catch (e2) {} }
+        })
+        .catch(() => {});
+    } catch (e) { /* 统计失败不影响正常使用 */ }
+  }
+
   /* ---------------- 购物车 localStorage ---------------- */
   function loadCart() {
     try {
@@ -295,6 +328,7 @@
 
       const url = U.waLink(phone, msg);
       window.open(url, "_blank", "noopener");
+      trackEvent("order");
     });
   }
 
@@ -327,6 +361,7 @@
 
   /* ---------------- 初始化 ---------------- */
   async function init() {
+    trackEvent("view");
     $("#year").textContent = new Date().getFullYear();
     bindEvents();
     bindOrderForm();

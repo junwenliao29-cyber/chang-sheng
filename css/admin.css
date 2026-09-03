@@ -156,3 +156,40 @@ textarea { resize: vertical; min-height: 72px; }
   .form-grid { grid-template-columns: 1fr; }
   .admin-top .sub { display: none; }
 }
+
+/* ================= 图片上传 ================= */
+.img-upload-row { display: flex; gap: 12px; align-items: flex-start; flex-wrap: wrap; }
+.dropzone {
+  border: 2px dashed #cbbfa9; border-radius: 12px; padding: 14px 18px;
+  display: flex; align-items: center; gap: 12px; cursor: pointer;
+  background: #fffdf9; flex: 1; min-width: 200px;
+  transition: border-color .12s ease, background .12s ease;
+}
+.dropzone:hover, .dropzone.dragover { border-color: var(--red); background: #fff6f4; }
+.dropzone .dz-icon { font-size: 28px; line-height: 1; }
+.img-preview {
+  width: 110px; height: 110px; object-fit: cover;
+  border-radius: 10px; border: 1px solid var(--line); background: #f7f1e7;
+}
+
+/* ================= 访问统计 ================= */
+.stat-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin: 6px 0 8px; }
+.stat-card { border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; background: #fdfaf5; }
+.stat-card .num { font-size: 26px; font-weight: 800; color: var(--red); line-height: 1.15; }
+.stat-card .num.gold { color: var(--gold); }
+.stat-card .lbl { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.stat-title { margin: 20px 0 8px; font-size: 15px; }
+.stat-days { width: 100%; border-collapse: collapse; }
+.stat-days th, .stat-days td { padding: 5px 8px; font-size: 13px; border-bottom: 1px solid var(--line); text-align: left; }
+.stat-days th { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .3px; }
+.bar-cell { width: 40%; }
+.bar { background: #f1ebe2; border-radius: 999px; height: 12px; overflow: hidden; }
+.bar i { display: block; height: 100%; background: linear-gradient(90deg, #d4a017, #b0232a); border-radius: 999px; }
+.hour-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 8px; }
+.hour-cell { text-align: center; }
+.hour-cell .h { font-size: 11px; color: var(--muted); }
+.hour-col { height: 110px; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; background: #faf6ef; border-radius: 8px; padding: 5px 2px 3px; }
+.hour-col i { display: block; width: 65%; min-height: 2px; background: #b0232a; border-radius: 4px 4px 0 0; }
+.hour-col .cnt { font-size: 10.5px; color: #7a7063; margin-top: 3px; }
+.hour-col.hot { background: #fdeeee; }
+@media (max-width: 700px) { .hour-grid { grid-template-columns: repeat(6, 1fr); } }

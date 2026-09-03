@@ -69,3 +69,34 @@ create policy "auth update settings" on public.settings
   for update to authenticated using (true);
 create policy "auth delete settings" on public.settings
   for delete to authenticated using (true);
+
+-- ============================================================
+-- 访问 / 下单统计表（顾客端可写入，仅登录管理员可查看）
+-- ============================================================
+create table if not exists public.events (
+  id bigint generated always as identity primary key,
+  type text not null check (type in ('view', 'order')),
+  session_id text,
+  created_at timestamptz not null default now()
+);
+create index if not exists idx_events_created on public.events(created_at);
+alter table public.events enable row level security;
+create policy "events public insert" on public.events
+  for insert to anon, authenticated with check (true);
+create policy "events admin read" on public.events
+  for select to authenticated using (true);
+
+-- ============================================================
+-- 菜品图片存储桶（公开可看，仅登录管理员可传/改/删）
+-- ============================================================
+insert into storage.buckets (id, name, public)
+values ('dish-images', 'dish-images', true)
+on conflict (id) do nothing;
+create policy "dish-images public read" on storage.objects
+  for select using (bucket_id = 'dish-images');
+create policy "dish-images auth insert" on storage.objects
+  for insert to authenticated with check (bucket_id = 'dish-images');
+create policy "dish-images auth update" on storage.objects
+  for update to authenticated using (bucket_id = 'dish-images');
+create policy "dish-images auth delete" on storage.objects
+  for delete to authenticated using (bucket_id = 'dish-images');

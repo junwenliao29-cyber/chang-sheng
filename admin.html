@@ -69,6 +69,7 @@
       <div class="tabs">
         <button class="tab active" data-tab="menu">🍜 菜单管理</button>
         <button class="tab" data-tab="settings">🏪 店铺设置</button>
+        <button class="tab" data-tab="stats">📊 访问统计</button>
         <button class="tab" data-tab="help">📖 使用说明</button>
       </div>
 
@@ -161,6 +162,29 @@
         </div>
       </div>
 
+      <!-- 访问统计 -->
+      <div class="tab-panel hidden" data-panel="stats">
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;">
+            <div>
+              <h2>📊 访问与下单统计</h2>
+              <p class="hint" id="statsHint">从本功能启用后开始统计。访问按“同一个浏览器每天只记 1 次”估算。</p>
+            </div>
+            <button class="btn btn-ghost" id="statsRefreshBtn">🔄 刷新</button>
+          </div>
+          <p id="statsLoading" class="muted small" style="padding:6px 0;">正在加载…</p>
+          <p id="statsError" class="auth-err hidden" style="margin-bottom:10px;"></p>
+          <div id="statsSummary" class="stat-cards"></div>
+
+          <h3 class="stat-title">最近 14 天 · 每天访问人数</h3>
+          <div id="statsDaysWrap"></div>
+
+          <h3 class="stat-title">一天里什么时段最忙（当地时间）</h3>
+          <p class="hint">按“访问”统计最近 30 天各小时的次数，方便安排备餐和配送高峰。</p>
+          <div id="statsHoursWrap"></div>
+        </div>
+      </div>
+
       <!-- 使用说明 -->
       <div class="tab-panel hidden" data-panel="help">
         <div class="card">
@@ -172,6 +196,8 @@
             <li><b>菜品的图片：</b>在“编辑菜品”里粘贴图片网址（https://…）即可显示照片；留空则显示中文占位字。</li>
             <li><b>顾客下单：</b>顾客加购 → 填姓名/地址 → 点按钮自动跳转你的 WhatsApp 并带上订单明细，你直接在 WhatsApp 回复确认即可。</li>
             <li><b>换 WhatsApp 号码：</b>只需在“店铺设置”里改号码，全站和下单跳转会自动更新。</li>
+            <li><b>传菜品图片：</b>编辑菜品时点“🖼️”选择本地图片，或直接把图片/网页图片拖进去，也可粘贴图片网址；上传后自动保存到网站图库。</li>
+            <li><b>看访问统计：</b>切到“访问统计”看每天/每时段多少人浏览、多少人下单及下单百分比。</li>
           </ol>
         </div>
       </div>
@@ -219,8 +245,21 @@
             <textarea id="dishDesc" rows="2" placeholder="Ej: Pollo salteado con maní, ají y salsa agripicante."></textarea>
           </div>
           <div class="full">
-            <label>图片网址 <small>(可选，https://…)</small></label>
+            <label>菜品图片 <small>(可选)</small></label>
+            <div class="img-upload-row">
+              <div id="dishImgDrop" class="dropzone">
+                <div class="dz-icon">🖼️</div>
+                <div>
+                  <p style="margin:0;"><b>点这里选本地图片</b></p>
+                  <p class="small muted" style="margin:2px 0 0;">或把图片文件 / 网页里的图片拖进来</p>
+                </div>
+              </div>
+              <input id="dishImgFile" type="file" accept="image/*" class="hidden" />
+              <img id="dishImgPreview" class="img-preview hidden" alt="图片预览" />
+            </div>
+            <p class="small muted" style="margin:8px 0 4px;">或直接粘贴网页图片网址：</p>
             <input id="dishImage" type="url" placeholder="https://…/foto.jpg" />
+            <p id="dishImgStatus" class="small muted" style="margin:5px 0 0;min-height:15px;"></p>
           </div>
         </form>
       </div>

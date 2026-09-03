@@ -34,6 +34,144 @@
     return m;
   }
 
+  /* ---------------- 图片上传（本地 / 拖拽 / 网址） ---------------- */
+  let dishUploading = false;
+  function pad2(n) { return n < 10 ? "0" + n : "" + n; }
+  function dayKey(d) { return d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate()); }
+  function slugName(name) {
+    return String(name || "img").replace(/[^a-zA-Z0-9._-]/g, "-").replace(/-+/g, "-").slice(-50);
+  }
+  function showPreview(url) {
+    const img = $("#dishImgPreview");
+    if (!img) return;
+    if (!url || !/^https?:\/\//i.test(String(url))) { img.classList.add("hidden"); img.removeAttribute("src"); return; }
+    img.src = url;
+    img.classList.remove("hidden");
+  }
+  function setImgStatus(t) { const el = $("#dishImgStatus"); if (el) el.textContent = t || ""; }
+  function setDishImageValue(url) {
+    const input = $("#dishImage");
+    input.value = url;
+    showPreview(url);
+  }
+  async function uploadDishImage(file) {
+    if (!file) return;
+    if (!/^image\//i.test(file.type)) { toast("请选择图片文件（jpg/png 等）", "err"); return; }
+    if (!client) { toast("尚未连接数据库", "err"); return; }
+    if (dishUploading) return;
+    dishUploading = true;
+    setImgStatus("正在上传 " + file.name + " …");
+    const path = "dishes/" + Date.now() + "-" + slugName(file.name);
+    try {
+      const { error } = await client.storage.from("dish-images").upload(path, file, { contentType: file.type || "image/jpeg" });
+      if (error) {
+        if (/bucket|does not exist|not found/i.test(error.message)) {
+          toast("图片存储还没开启：请在 Supabase SQL Editor 运行 migration-stats.sql", "err");
+          setImgStatus("上传失败：还没运行图片存储的 SQL");
+        } else {
+          toast("上传失败：" + errMsg(error), "err");
+          setImgStatus("上传失败，请重试");
+        }
+        return;
+      }
+      const url = client.storage.from("dish-images").getPublicUrl(path).data.publicUrl;
+      setDishImageValue(url);
+      setImgStatus("✅ 上传成功，已自动填入（保存菜品后生效）");
+    } catch (e) {
+      toast("上传出错：" + errMsg(e), "err");
+      setImgStatus("");
+    } finally {
+      dishUploading = false;
+    }
+  }
+
+  /* ---------------- 访问统计 ---------------- */
+  async function loadStats() {
+    if (!client) return;
+    const loading = $("#statsLoading");
+    const errEl = $("#statsError");
+    if (loading) loading.style.display = "";
+    if (errEl) { errEl.classList.add("hidden"); errEl.textContent = ""; }
+    try {
+      const since = new Date(Date.now() - 60 * 24 * 3600 * 1000).toISOString();
+      const { data, error } = await client
+        .from("events")
+        .select("type, created_at")
+        .gte("created_at", since)
+        .limit(10000)
+        .order("created_at", { ascending: true });
+      if (error) throw error;
+      renderStats(data || []);
+    } catch (e) {
+      const msg = errMsg(e);
+      const friendly = /events|relation|does not exist|not exist|underlying/i.test(msg)
+        ? "统计功能还没开启：请在 Supabase SQL Editor 里运行 supabase/migration-stats.sql 那段 SQL，然后点“刷新”。"
+        : "加载统计失败：" + msg;
+      if (errEl) { errEl.textContent = friendly; errEl.classList.remove("hidden"); }
+      const clear = (id) => { const el = $(id); if (el) el.innerHTML = ""; };
+      clear("#statsSummary"); clear("#statsDaysWrap"); clear("#statsHoursWrap");
+    } finally {
+      if (loading) loading.style.display = "none";
+    }
+  }
+  function renderStats(rows) {
+    const now = new Date();
+    const today = dayKey(now);
+    const days = {};
+    const hours = new Array(24).fill(0);
+    let views = 0, orders = 0;
+    rows.forEach(function (r) {
+      if (!r || !r.type) return;
+      const d = new Date(r.created_at);
+      if (isNaN(d.getTime())) return;
+      const k = dayKey(d);
+      if (!days[k]) days[k] = { views: 0, orders: 0 };
+      if (r.type === "order") { days[k].orders += 1; orders += 1; }
+      else { days[k].views += 1; views += 1; hours[d.getHours()] += 1; }
+    });
+    const tv = days[today] ? days[today].views : 0;
+    const to = days[today] ? days[today].orders : 0;
+    const rate = views > 0 ? (orders / views * 100) : 0;
+
+    const cards = [
+      { n: tv, l: "今日访问（人）" },
+      { n: to, l: "今日下单（次）" },
+      { n: views, l: "近 60 天访问（人）" },
+      { n: orders, l: "近 60 天下单（次）" },
+      { n: rate.toFixed(1) + "%", l: "下单率（订单 ÷ 访问）", gold: true },
+    ];
+    $("#statsSummary").innerHTML = cards.map(function (c) {
+      return '<div class="stat-card"><div class="num' + (c.gold ? " gold" : "") + '">' + c.n + "</div>" +
+        '<div class="lbl">' + c.l + "</div></div>";
+    }).join("");
+
+    const last14 = [];
+    for (let i = 13; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
+      last14.push(dayKey(d));
+    }
+    const maxDay = Math.max(1, ...last14.map((k) => (days[k] ? days[k].views : 0)));
+    $("#statsDaysWrap").innerHTML =
+      '<table class="stat-days"><thead><tr><th>日期</th><th>访问</th><th class="bar-cell"></th><th>下单</th></tr></thead><tbody>' +
+      last14.map(function (k) {
+        const v = days[k] ? days[k].views : 0;
+        const o = days[k] ? days[k].orders : 0;
+        const w = Math.max(1.5, Math.round(v / maxDay * 100));
+        return "<tr><td>" + k + (k === today ? "（今天）" : "") + "</td><td><b>" + v + "</b></td>" +
+          '<td class="bar-cell"><div class="bar"><i style="width:' + w + '%"></i></div></td><td>' + o + "</td></tr>";
+      }).join("") + "</tbody></table>";
+
+    const maxH = Math.max(1, ...hours);
+    $("#statsHoursWrap").innerHTML =
+      '<div class="hour-grid">' +
+      hours.map(function (c, h) {
+        const pct = Math.max(2, Math.round(c / maxH * 100));
+        const hot = c > 0 && c === maxH ? " hot" : "";
+        return '<div class="hour-cell"><div class="hour-col' + hot + '"><i style="height:' + pct + '%"></i>' +
+          '<span class="cnt">' + c + '</span></div><div class="h">' + h + "时</div></div>";
+      }).join("") + "</div>";
+  }
+
   /* ---------------- 视图切换 ---------------- */
   function showSetup() {
     $("#setupPanel").classList.remove("hidden");
@@ -192,6 +330,8 @@
     $("#dishSort").value = dish ? dish.sort_order || 0 : cats.length ? 1 : 0;
     $("#dishDesc").value = dish ? dish.description || "" : "";
     $("#dishImage").value = dish ? dish.image_url || "" : "";
+    showPreview($("#dishImage").value);
+    setImgStatus("");
     $("#dishAvailable").checked = dish ? dish.available !== false : true;
 
     $("#dishModal").classList.add("show");
@@ -200,6 +340,8 @@
   function closeDishModal() {
     $("#dishModal").classList.remove("show");
     editingDishId = null;
+    showPreview("");
+    setImgStatus("");
   }
   async function saveDish() {
     const category_id = $("#dishCategory").value;
@@ -307,6 +449,7 @@
         document.querySelectorAll(".tab-panel").forEach((p) => {
           p.classList.toggle("hidden", p.getAttribute("data-panel") !== t.getAttribute("data-tab"));
         });
+        if (t.getAttribute("data-tab") === "stats") loadStats();
       });
     });
 
@@ -358,6 +501,36 @@
     $("#dishModal").addEventListener("click", (e) => { if (e.target === $("#dishModal")) closeDishModal(); });
     $("#dishModalSave").addEventListener("click", saveDish);
     $("#dishForm").addEventListener("submit", (e) => { e.preventDefault(); saveDish(); });
+
+    // 图片上传：点击选择 / 拖拽 / 网址预览
+    $("#dishImgDrop").addEventListener("click", () => $("#dishImgFile").click());
+    $("#dishImgFile").addEventListener("change", (e) => {
+      const f = e.target.files && e.target.files[0];
+      if (f) uploadDishImage(f);
+      e.target.value = "";
+    });
+    ["dragenter", "dragover"].forEach((ev) =>
+      $("#dishImgDrop").addEventListener(ev, (e) => {
+        e.preventDefault();
+        $("#dishImgDrop").classList.add("dragover");
+      })
+    );
+    $("#dishImgDrop").addEventListener("dragleave", (e) => { e.preventDefault(); $("#dishImgDrop").classList.remove("dragover"); });
+    $("#dishImgDrop").addEventListener("drop", (e) => {
+      e.preventDefault();
+      $("#dishImgDrop").classList.remove("dragover");
+      const dt = e.dataTransfer;
+      if (dt && dt.files && dt.files.length) { uploadDishImage(dt.files[0]); return; }
+      const uri = dt ? (dt.getData("text/uri-list") || dt.getData("text/plain") || "") : "";
+      if (/^https?:\/\//i.test(uri.trim())) {
+        setDishImageValue(uri.trim());
+        setImgStatus("已使用网页图片网址");
+      }
+    });
+    $("#dishImage").addEventListener("input", (e) => showPreview(e.target.value.trim()));
+
+    // 统计刷新
+    $("#statsRefreshBtn").addEventListener("click", loadStats);
 
     // 设置保存
     $("#settingsForm").addEventListener("submit", saveSettings);
