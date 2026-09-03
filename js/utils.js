@@ -41,13 +41,13 @@ window.Utils = (function () {
   // info:  { name, type, address, note }
   function buildOrderText(storeName, lines, totalStr, info) {
     let msg =
-      "¡Hola " + storeName + "! Quiero hacer un pedido 🥢\n\n" +
+      "Hola " + storeName + "! Quiero hacer un pedido:\n\n" +
       lines.join("\n") +
-      "\n\n💰 Total: " + totalStr +
-      "\n\n👤 Nombre: " + (info.name || "") +
-      "\n🛍️/🛵 Tipo: " + (info.type || "");
-    if (info.address) msg += "\n📍 Dirección: " + info.address;
-    if (info.note) msg += "\n📝 Nota: " + info.note;
+      "\n\nTotal: " + totalStr +
+      "\n\nNombre: " + (info.name || "") +
+      "\nTipo: " + (info.type || "");
+    if (info.address) msg += "\nDirección: " + info.address;
+    if (info.note) msg += "\nNota: " + info.note;
     msg += "\n\n¡Gracias!";
     return msg;
   }

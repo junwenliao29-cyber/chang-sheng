@@ -138,6 +138,7 @@ a { color: inherit; }
 .catnav a:hover { border-color: var(--red); color: var(--red); }
 .catnav a .zh { color: var(--muted); font-weight: 400; margin-left: 4px; }
 
+#menu { scroll-margin-top: 120px; }
 /* ---------- 菜单区 ---------- */
 .menu-section { padding: 30px 0 8px; scroll-margin-top: 150px; }
 .cat-head { display: flex; align-items: baseline; gap: 12px; margin: 0 0 4px; }
