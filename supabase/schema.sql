@@ -121,3 +121,35 @@ as $$
 $$;
 revoke all on function public.next_order_number() from public;
 grant execute on function public.next_order_number() to anon, authenticated;
+
+-- 后台取餐号管理：查看当前 / 改成指定号码 / 重置
+create or replace function public.current_order_number()
+returns integer
+language sql
+security definer
+set search_path = public
+as $$
+  select n from public.order_counter where id = 1;
+$$;
+create or replace function public.set_order_number(new_num integer)
+returns integer
+language sql
+security definer
+set search_path = public
+as $$
+  update public.order_counter set n = greatest(0, new_num) where id = 1 returning n;
+$$;
+create or replace function public.reset_order_number()
+returns integer
+language sql
+security definer
+set search_path = public
+as $$
+  update public.order_counter set n = 0 where id = 1 returning n;
+$$;
+revoke all on function public.current_order_number() from public;
+grant execute on function public.current_order_number() to authenticated;
+revoke all on function public.set_order_number(integer) from public;
+grant execute on function public.set_order_number(integer) to authenticated;
+revoke all on function public.reset_order_number() from public;
+grant execute on function public.reset_order_number() to authenticated;

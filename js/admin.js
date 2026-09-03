@@ -469,6 +469,55 @@
     } catch (err) { toast(errMsg(err), "err"); }
   }
 
+  /* ---------------- 取餐号：查看 / 手动纠正 ---------------- */
+  function numRpcError(e) {
+    const m = errMsg(e);
+    return /does not exist|not exist|function|permission denied|permission/i.test(m)
+      ? "取餐号功能还没开启：请先在 Supabase SQL Editor 运行 supabase/migration-ordernum.sql 最新版 SQL。"
+      : m;
+  }
+  async function loadNumStatus() {
+    if (!client) return;
+    const msgEl = $("#numMsg");
+    try {
+      const { data, error } = await client.rpc("current_order_number");
+      if (error) throw error;
+      const cur = Number(data) || 0;
+      $("#numCurrent").textContent = String(cur);
+      $("#numNext").textContent = String(cur + 1);
+      if (msgEl) msgEl.textContent = "";
+    } catch (e) {
+      if (msgEl) msgEl.textContent = numRpcError(e);
+    }
+  }
+  async function applySetNumber() {
+    if (!client) return;
+    const input = $("#numSetInput");
+    const v = U.toInt(input.value);
+    if (input.value.trim() === "" || v < 0) { toast("请输入不小于 0 的号码", "err"); return; }
+    try {
+      const { data, error } = await client.rpc("set_order_number", { new_num: v });
+      if (error) throw error;
+      input.value = "";
+      await loadNumStatus();
+      toast("已把号码设为 #" + data + "，下一个顾客将是 #" + (Number(data) + 1) + " ✅");
+    } catch (e) {
+      toast("修改失败：" + numRpcError(e), "err");
+    }
+  }
+  async function resetOrderNumber() {
+    if (!client) return;
+    if (!confirm("确定把取餐号重置为 0 吗？下一个顾客会自动从 #1 开始。")) return;
+    try {
+      const { error } = await client.rpc("reset_order_number");
+      if (error) throw error;
+      await loadNumStatus();
+      toast("已重置为 0，下一个顾客将从 #1 开始 ✅");
+    } catch (e) {
+      toast("重置失败：" + numRpcError(e), "err");
+    }
+  }
+
   /* ---------------- 事件绑定 ---------------- */
   function bindEvents() {
     // 登录
@@ -502,6 +551,7 @@
           p.classList.toggle("hidden", p.getAttribute("data-panel") !== t.getAttribute("data-tab"));
         });
         if (t.getAttribute("data-tab") === "stats") loadStats();
+        else if (t.getAttribute("data-tab") === "num") loadNumStatus();
         window.scrollTo({ top: 0, behavior: "smooth" });
       });
     });
@@ -600,6 +650,12 @@
 
     // 统计刷新
     $("#statsRefreshBtn").addEventListener("click", loadStats);
+
+    // 取餐号：查看 / 手动修改 / 重置
+    $("#numRefreshBtn").addEventListener("click", loadNumStatus);
+    $("#numSetBtn").addEventListener("click", applySetNumber);
+    $("#numSetInput").addEventListener("keydown", (e) => { if (e.key === "Enter") applySetNumber(); });
+    $("#numResetBtn").addEventListener("click", resetOrderNumber);
 
     // 设置保存
     $("#settingsForm").addEventListener("submit", saveSettings);

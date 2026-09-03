@@ -69,6 +69,7 @@
       <div class="tabs">
         <button class="tab active" data-tab="menu">🍜 菜单管理</button>
         <button class="tab" data-tab="settings">🏪 店铺设置</button>
+        <button class="tab" data-tab="num">🔢 取餐号</button>
         <button class="tab" data-tab="stats">📊 访问统计</button>
         <button class="tab" data-tab="help">📖 使用说明</button>
       </div>
@@ -159,6 +160,30 @@
               <button class="btn btn-primary" type="submit">💾 保存设置</button>
             </div>
           </form>
+        </div>
+      </div>
+
+      <!-- 取餐号管理 -->
+      <div class="tab-panel hidden" data-panel="num">
+        <div class="card" style="max-width:720px;">
+          <h2>🔢 取餐号</h2>
+          <p class="hint">顾客自取下单时<b>自动取号</b>。这里用来<b>查看当前发到几号</b>，以及号码偶尔跳号时<b>手动纠正</b>（改成指定号码或重置）。</p>
+          <div class="stat-cards">
+            <div class="stat-card"><div class="num" id="numCurrent">—</div><div class="lbl">当前已发到</div></div>
+            <div class="stat-card"><div class="num gold" id="numNext">—</div><div class="lbl">下一个（会自动发出）</div></div>
+          </div>
+          <div class="form-grid" style="grid-template-columns:1fr auto auto;align-items:end;">
+            <div>
+              <label>手动改成号码 # <small>(纠正跳号用)</small></label>
+              <input id="numSetInput" type="number" min="0" placeholder="例如 5" />
+            </div>
+            <button class="btn btn-ghost" id="numSetBtn">✏️ 改成这个号</button>
+            <button class="btn btn-danger" id="numResetBtn">↺ 重置为 0</button>
+          </div>
+          <div class="form-actions">
+            <button class="btn btn-primary" id="numRefreshBtn">🔄 刷新号码</button>
+          </div>
+          <p class="small muted" id="numMsg" style="margin:10px 0 0;"></p>
         </div>
       </div>
 
