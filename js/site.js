@@ -12,6 +12,7 @@
   const state = {
     orderType: "retiro", // retiro | despacho
   };
+  let lastOrderNumber = null; // 记住本次取餐号：顾客改单重发时沿用同一号码
 
   /* ---------------- 访问 / 下单统计 ---------------- */
   function getSessionId() {
@@ -361,25 +362,30 @@
       }
       const note = $("#custNote").value.trim();
 
-      // 自取：先取号（只有真正点了“WhatsApp 下单”才 +1）
+      // 自取取号：第一次发送时取号；修改后重发沿用同一个号，不再占新号
       let orderNumber = null;
       if (isRetiro) {
-        submitting = true;
-        btn.disabled = true;
-        btn.textContent = "⏳ Asignando número…";
-        let got = null;
-        try {
-          got = await allocateOrderNumber();
-        } catch (e) { got = null; }
-        submitting = false;
-        btn.disabled = false;
-        btn.textContent = origText;
-        if (got === null || got === undefined || isNaN(got)) {
-          alert("No se pudo asignar tu número de pedido. Revisa tu conexión e inténtalo de nuevo."); // eslint-disable-line no-alert
-          return;
+        if (lastOrderNumber !== null) {
+          orderNumber = lastOrderNumber;
+        } else {
+          submitting = true;
+          btn.disabled = true;
+          btn.textContent = "⏳ Asignando número…";
+          let got = null;
+          try {
+            got = await allocateOrderNumber();
+          } catch (e) { got = null; }
+          submitting = false;
+          btn.disabled = false;
+          btn.textContent = origText;
+          if (got === null || got === undefined || isNaN(got)) {
+            alert("No se pudo asignar tu número de pedido. Revisa tu conexión e inténtalo de nuevo."); // eslint-disable-line no-alert
+            return;
+          }
+          orderNumber = got;
+          lastOrderNumber = got;
+          $("#custNum").value = "#" + orderNumber;
         }
-        orderNumber = got;
-        $("#custNum").value = "#" + orderNumber;
       }
 
       // WhatsApp 消息格式：*数量 菜名*（例如 *2 Carne Mongoliana con arroz*）
