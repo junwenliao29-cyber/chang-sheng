@@ -64,9 +64,6 @@
   function cartCount() {
     return cart.reduce((s, it) => s + it.qty, 0);
   }
-  function cartTotal() {
-    return cart.reduce((s, it) => s + it.qty * it.price_clp, 0);
-  }
 
   /* ---------------- 渲染店铺信息 ---------------- */
   function renderSettings() {
@@ -201,21 +198,18 @@
           '<div class="cart-line" data-id="' + U.escapeHTML(it.dishId) + '">' +
           '<div class="cart-line-info">' +
           '<div class="cart-line-name">' + U.escapeHTML(it.name_es) + zh + "</div>" +
-          '<div class="cart-line-price">' + U.formatCLP(it.price_clp) + " c/u</div>" +
           '<div class="qty">' +
           '<button type="button" data-dec="' + U.escapeHTML(it.dishId) + '" aria-label="Menos">−</button>' +
           "<span>" + it.qty + "</span>" +
           '<button type="button" data-inc="' + U.escapeHTML(it.dishId) + '" aria-label="Más">+</button>' +
-          "</div></div>" +
+          "</div>" +
+          "</div>" +
           '<div class="cart-line-right">' +
-          '<div class="cart-line-price"><b>' + U.formatCLP(it.qty * it.price_clp) + "</b></div>" +
           '<button type="button" class="cart-line-remove" data-del="' + U.escapeHTML(it.dishId) + '" aria-label="Quitar">🗑</button>' +
           "</div></div>"
         );
       })
       .join("");
-
-    $("#cartTotal").textContent = U.formatCLP(cartTotal());
   }
 
   function openCart() {
@@ -308,23 +302,18 @@
       }
       const note = $("#custNote").value.trim();
       const lines = cart.map(
-        (it, i) => i + 1 + ". " + it.name_es + " x" + it.qty + " = " + U.formatCLP(it.qty * it.price_clp)
+        (it, i) => i + 1 + ". " + it.name_es + " x" + it.qty
       );
       const s = menu.settings || {};
       const storeName = s.store_name || "CHANG SHENG";
       const phone = s.whatsapp_number || "56954663415";
 
-      const msg = U.buildOrderText(
-        storeName,
-        lines,
-        U.formatCLP(cartTotal()),
-        {
-          name: name,
-          type: state.orderType === "despacho" ? "Despacho a domicilio" : "Retiro en local",
-          address: address,
-          note: note,
-        }
-      );
+      const msg = U.buildOrderText(storeName, lines, {
+        name: name,
+        type: state.orderType === "despacho" ? "Despacho a domicilio" : "Retiro en local",
+        address: address,
+        note: note,
+      });
 
       const url = U.waLink(phone, msg);
       window.open(url, "_blank", "noopener");

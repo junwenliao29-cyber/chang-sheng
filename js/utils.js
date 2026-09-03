@@ -36,19 +36,18 @@ window.Utils = (function () {
   }
 
 
-  // 生成发送到 WhatsApp 的订单文本
-  // lines: 数组，如 ["1. Arroz Chaufa x2 = $11.000", ...]
+  // 生成发送到 WhatsApp 的订单文本（不写价格，由老板自己算总账）
+  // lines: 数组，如 ["1. Arroz Chaufa x2", ...]
   // info:  { name, type, address, note }
-  function buildOrderText(storeName, lines, totalStr, info) {
+  function buildOrderText(storeName, lines, info) {
     let msg =
       "Hola " + storeName + "! Quiero hacer un pedido:\n\n" +
       lines.join("\n") +
-      "\n\nTotal: " + totalStr +
       "\n\nNombre: " + (info.name || "") +
       "\nTipo: " + (info.type || "");
     if (info.address) msg += "\nDirección: " + info.address;
     if (info.note) msg += "\nNota: " + info.note;
-    msg += "\n\n¡Gracias!";
+    msg += "\n\nEl total te lo confirmamos por WhatsApp. ¡Gracias!";
     return msg;
   }
 
