@@ -300,9 +300,63 @@ footer .container { padding: 26px 18px 20px; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .hidden { display: none !important; }
 
+/* ================= 中式细节装饰（含蓄不突兀） ================= */
+.lattice-strip {
+  height: 7px;
+  background:
+    repeating-linear-gradient(90deg,
+      #a81e26 0px, #a81e26 18px, #f0c75e 18px, #f0c75e 21px,
+      #a81e26 21px, #a81e26 40px, #f6e3b4 40px, #f6e3b4 43px,
+      #a81e26 43px, #a81e26 62px);
+}
+.hero { padding: 54px 18px 104px; }
+.hero-watermark {
+  position: absolute; right: 1%; bottom: -10px; z-index: 0;
+  font-size: min(36vw, 340px); line-height: 1;
+  color: rgba(255, 255, 255, .05);
+  font-family: "PingFang SC", "Hiragino Sans GB", "STKaiti", "KaiTi", serif;
+  pointer-events: none; user-select: none;
+}
+.hero-frame {
+  position: relative; z-index: 1; max-width: 780px; margin: 0 auto;
+  padding: 46px 48px 42px;
+  border: 1px solid rgba(240, 199, 94, .55);
+  border-radius: 8px;
+  outline: 1px solid rgba(240, 199, 94, .16);
+  outline-offset: 7px;
+  background: radial-gradient(130% 150% at 50% 0%, rgba(255,255,255,.06), rgba(0,0,0,.05));
+}
+.hero-frame .zh-badge, .hero-frame h1,
+.hero-frame .sub, .hero-frame .sub-zh, .hero-frame .hero-cta { position: relative; z-index: 1; }
+.hero-vertical {
+  position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+  writing-mode: vertical-rl; text-orientation: upright;
+  font-size: 13px; letter-spacing: .4em;
+  color: rgba(240, 199, 94, .78);
+  font-family: "PingFang SC", "Hiragino Sans GB", "STKaiti", "KaiTi", serif;
+  white-space: nowrap; pointer-events: none;
+}
+.orn-divider {
+  display: flex; align-items: center; gap: 10px; justify-content: center;
+  max-width: 340px; margin: 16px auto 26px;
+}
+.orn-divider span { flex: 1; height: 1px; background: linear-gradient(90deg, transparent, rgba(240,199,94,.7), transparent); }
+.orn-divider i { font-style: normal; font-size: 10px; color: #f0c75e; }
+footer { position: relative; overflow: hidden; }
+.footer-mark {
+  position: absolute; right: -10px; bottom: -60px; z-index: 0;
+  font-size: 240px; line-height: 1; color: rgba(240, 199, 94, .06);
+  font-family: "PingFang SC", "Hiragino Sans GB", "STKaiti", "KaiTi", serif;
+  pointer-events: none; user-select: none;
+}
+footer .container { position: relative; z-index: 1; }
+
 /* ---------- 移动端 ---------- */
 @media (max-width: 640px) {
-  .hero { padding: 56px 14px 80px; }
+  .hero { padding: 40px 12px 86px; }
+  .hero-frame { padding: 34px 14px 34px; border-color: rgba(240,199,94,.4); outline-offset: 4px; }
+  .hero-vertical { display: none; }
+  .orn-divider { margin: 12px auto 20px; }
   .hero .zh-badge { font-size: 46px; }
   .hero h1 { font-size: 30px; letter-spacing: 3px; }
   .topnav a.nav-link { display: none; }

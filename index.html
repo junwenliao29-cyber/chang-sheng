@@ -10,6 +10,9 @@
 </head>
 <body>
 
+  <!-- 顶部金红回纹装饰条 -->
+  <div class="lattice-strip" aria-hidden="true"></div>
+
   <!-- 演示模式提示（连接 Supabase 后会自动隐藏） -->
   <div id="demoBar" class="demo-bar hidden">
     Modo demostración: estás viendo el menú de ejemplo. Para publicar tu menú real,
@@ -43,13 +46,18 @@
 
   <!-- 欢迎区 -->
   <section class="hero">
-    <div class="zh-badge">昌盛</div>
-    <h1>CHANG SHENG</h1>
-    <p class="sub">Comida china auténtica · Cocina al momento</p>
-    <p class="sub-zh">中华美食 · 新鲜现做 · 欢迎品尝</p>
-    <div class="hero-cta">
-      <a class="btn btn-gold" href="#menu">Ver el menú 🍜</a>
-      <a class="btn btn-outline" id="heroWaBtn" href="https://wa.me/56954663415" target="_blank" rel="noopener">Pedir por WhatsApp</a>
+    <div class="hero-watermark" aria-hidden="true">昌</div>
+    <div class="hero-frame">
+      <div class="hero-vertical" aria-hidden="true">中华美食 · 现点现做 · 欢迎光临</div>
+      <div class="zh-badge">昌盛</div>
+      <h1>CHANG SHENG</h1>
+      <p class="sub">Comida china auténtica · Cocina al momento</p>
+      <p class="sub-zh">中华美食 · 新鲜现做 · 欢迎品尝</p>
+      <div class="orn-divider" aria-hidden="true"><span></span><i>◆</i><span></span></div>
+      <div class="hero-cta">
+        <a class="btn btn-gold" href="#menu">Ver el menú 🍜</a>
+        <a class="btn btn-outline" id="heroWaBtn" href="https://wa.me/56954663415" target="_blank" rel="noopener">Pedir por WhatsApp</a>
+      </div>
     </div>
   </section>
 
@@ -123,6 +131,7 @@
 
   <!-- 页脚 -->
   <footer>
+    <div class="footer-mark" aria-hidden="true">昌</div>
     <div class="container">
       <div class="footer-top">
         <div>
