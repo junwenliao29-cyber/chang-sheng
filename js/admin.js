@@ -302,10 +302,12 @@
           '<td style="text-align:center;">' +
           (on ? '<span class="badge badge-on">在售</span>' : '<span class="badge badge-off">已下架</span>') +
           "</td>" +
-          "<td>" + U.escapeHTML(String(d.sort_order || 0)) + "</td>" +
+          '<td><input type="number" class="sort-inline" data-sort-id="' + U.escapeHTML(d.id) + '" value="' + U.escapeHTML(String(d.sort_order || 0)) + '" min="1" title="排序数字（越小越靠前）" /></td>' +
           '<td><div class="row-actions">' +
-          '<button class="btn btn-sm btn-ghost edit-dish">编辑</button>' +
-          '<button class="btn btn-sm btn-danger del-dish">删除</button>' +
+          '<button type="button" class="btn btn-sm btn-ghost mv-btn" data-mv="' + U.escapeHTML(d.id) + '" data-dir="-1" title="上移">↑</button>' +
+          '<button type="button" class="btn btn-sm btn-ghost mv-btn" data-mv="' + U.escapeHTML(d.id) + '" data-dir="1" title="下移">↓</button>' +
+          '<button type="button" class="btn btn-sm btn-ghost edit-dish">编辑</button>' +
+          '<button type="button" class="btn btn-sm btn-danger del-dish">删除</button>' +
           "</div></td></tr>"
         );
       })
@@ -313,6 +315,55 @@
   }
 
   /* ---------------- 菜品弹窗 ---------------- */
+  /* ---------------- 菜品手动排序 ---------------- */
+  function categoryDishList(catId) {
+    return dishes.filter((d) => d.category_id === catId);
+  }
+  function displayOrderFor(catId) {
+    return categoryDishList(catId).slice().sort(function (a, b) {
+      const sa = a.sort_order || 0, sb = b.sort_order || 0;
+      if (sa !== sb) return sa - sb;
+      return a.name_es.localeCompare(b.name_es);
+    });
+  }
+  // 新增菜品默认排到该分类最后
+  function defaultSortFor(catId) {
+    let max = 0;
+    categoryDishList(catId).forEach((d) => { const n = d.sort_order || 0; if (n > max) max = n; });
+    return max + 1;
+  }
+  async function renumberCategory(catId, ordered) {
+    const updates = ordered.map((d, i) =>
+      client.from("dishes").update({ sort_order: i + 1 }).eq("id", d.id)
+    );
+    await Promise.all(updates);
+  }
+  async function moveDish(id, dir) {
+    const d = dishes.find((x) => x.id === id);
+    if (!d || !client) return;
+    const ordered = displayOrderFor(d.category_id);
+    const idx = ordered.findIndex((x) => x.id === id);
+    const t = idx + dir;
+    if (t < 0 || t >= ordered.length) return;
+    const tmp = ordered[idx]; ordered[idx] = ordered[t]; ordered[t] = tmp;
+    try {
+      await renumberCategory(d.category_id, ordered);
+      toast("顺序已更新 ✅");
+      await refresh();
+    } catch (e) { toast(errMsg(e), "err"); }
+  }
+  async function applySortInput(id, value) {
+    const d = dishes.find((x) => x.id === id);
+    if (!d || !client) return;
+    d.sort_order = Math.max(1, U.toInt(value));
+    const ordered = displayOrderFor(d.category_id);
+    try {
+      await renumberCategory(d.category_id, ordered);
+      toast("顺序已更新 ✅");
+      await refresh();
+    } catch (e) { toast(errMsg(e), "err"); }
+  }
+
   function openDishModal(dish) {
     editingDishId = dish ? dish.id : null;
     $("#dishModalTitle").textContent = dish ? "编辑菜品" : "新增菜品";
@@ -327,7 +378,7 @@
     $("#dishNameEs").value = dish ? dish.name_es : "";
     $("#dishNameZh").value = dish ? dish.name_zh || "" : "";
     $("#dishPrice").value = dish ? dish.price_clp : "";
-    $("#dishSort").value = dish ? dish.sort_order || 0 : cats.length ? 1 : 0;
+    $("#dishSort").value = dish ? dish.sort_order || 0 : defaultSortFor(catSel.value);
     $("#dishDesc").value = dish ? dish.description || "" : "";
     $("#dishImage").value = dish ? dish.image_url || "" : "";
     showPreview($("#dishImage").value);
@@ -488,6 +539,8 @@
         if (d) openDishModal(d);
       } else if (btn.classList.contains("del-dish")) {
         deleteDish(id);
+      } else if (btn.classList.contains("mv-btn")) {
+        moveDish(btn.getAttribute("data-mv"), parseInt(btn.getAttribute("data-dir"), 10) || 0);
       }
     });
 
@@ -495,6 +548,17 @@
     $("#addDishBtn").addEventListener("click", () => {
       if (!cats.length) { toast("请先新增一个分类", "err"); return; }
       openDishModal(null);
+    });
+
+    // 排序数字输入：修改后自动保存
+    $("#dishRows").addEventListener("change", (e) => {
+      const inp = e.target.closest(".sort-inline");
+      if (inp) applySortInput(inp.getAttribute("data-sort-id"), inp.value);
+    });
+
+    // 新增菜品时，切换分类自动给出该类最后的排序号
+    $("#dishCategory").addEventListener("change", () => {
+      if (!editingDishId) $("#dishSort").value = defaultSortFor($("#dishCategory").value);
     });
 
     // 弹窗

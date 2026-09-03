@@ -159,6 +159,10 @@ textarea { resize: vertical; min-height: 72px; }
   .admin-top .sub { display: none; }
 }
 
+
+/* 菜品排序 */
+.tbl input.sort-inline { width: 62px; text-align: center; }
+.row-actions .btn-sm { padding: 5px 9px; }
 /* ================= 图片上传 ================= */
 .img-upload-row { display: flex; gap: 12px; align-items: flex-start; flex-wrap: wrap; }
 .dropzone {
