@@ -279,6 +279,10 @@
   function bindEvents() {
     // 登录
     $("#loginBtn").addEventListener("click", async () => {
+      if (!auth) {
+        $("#authErr").textContent = "页面组件还没加载好，请刷新页面后再登录。";
+        return;
+      }
       const email = $("#loginEmail").value.trim();
       const pass = $("#loginPass").value;
       if (!email || !pass) { $("#authErr").textContent = "请输入邮箱和密码。"; return; }
