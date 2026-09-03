@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>昌盛 CHANG SHENG · Comida China</title>
+  <meta name="description" content="昌盛 CHANG SHENG — Comida china auténtica. Pide por WhatsApp y retira o recibe en tu casa." />
+  <link rel="stylesheet" href="css/site.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🥢</text></svg>" />
+</head>
+<body>
+
+  <!-- 演示模式提示（连接 Supabase 后会自动隐藏） -->
+  <div id="demoBar" class="demo-bar hidden">
+    Modo demostración: estás viendo el menú de ejemplo. Para publicar tu menú real,
+    <a href="admin.html">configura Supabase aquí</a>.
+  </div>
+
+  <!-- 顶部导航 -->
+  <header class="topbar">
+    <div class="container">
+      <a class="brand" href="#">
+        <span class="brand-mark">昌</span>
+        <span class="brand-name">
+          <b>CHANG SHENG</b>
+          <span>昌盛 · comida china</span>
+        </span>
+      </a>
+      <nav class="topnav">
+        <a class="nav-link" href="#menu">Menú</a>
+        <a class="nav-link" href="#como-pedir">Cómo pedir</a>
+        <a class="nav-link" href="#contacto">Contacto</a>
+        <a class="wa-btn" id="topWaBtn" href="https://wa.me/56954663415" target="_blank" rel="noopener">
+          <svg viewBox="0 0 32 32"><path d="M16 .8C7.6.8.8 7.6.8 16c0 2.7.7 5.3 2 7.6L.8 31.2l7.8-2c2.2 1.2 4.7 1.9 7.4 1.9 8.4 0 15.2-6.8 15.2-15.2S24.4.8 16 .8zm0 27.8c-2.4 0-4.7-.6-6.7-1.8l-.5-.3-4.6 1.2 1.2-4.5-.3-.5c-1.2-2-1.9-4.4-1.9-6.8C3.2 9 9 3.2 16 3.2S28.8 9 28.8 16 23 28.6 16 28.6zm6.9-9.1c-.4-.2-2.2-1.1-2.5-1.2-.3-.1-.6-.2-.8.2-.3.4-1 1.2-1.2 1.5-.2.3-.4.3-.8.1-.4-.2-1.6-.6-3.1-1.9-1.1-1-1.9-2.3-2.1-2.6-.2-.4 0-.6.2-.8l.6-.7c.2-.2.3-.4.4-.6.1-.2.1-.4 0-.6-.1-.2-.8-2-.1-3.1.1-.2.2-.1.3-.1h.9c.3 0 .5-.1.8.1.2.3 1.2 1.4 1.2 1.4s.3.5.7.5.5-.6.5-.6.3-.8.4-1c.1-.2.2-.3.4-.2.2.1 1 .5 1 .5s.8.4 1.2.5c.1.1.1.2.1.3 0 .1-.2 1.2-.4 2.2-.1.5-.7.9-1.2 1.3-.3.3-.3.5 0 .8.4.6 1.9 2.8 2.1 3 .2.2.2.4.1.5-.1.1-.4.3-.6.4-.2.2-.4.3-.5.4-.2.1-.2.2 0 .4.2.2 1.2 1.5 1.4 1.7.2.2.4.3.6.4.1 0 .2.1.3.1.1 0 .1-.1.2-.1.1-.2.7-1.7.8-1.9.1-.2.2-.2.4-.1.2.1 1.4.7 1.6.8.2.1.4.2.5.3.1.2.1.7-.1 1.3-.2.6-1.2 1.2-1.7 1.3-.4.2-1 .3-1.7.1z"/></svg>
+          WhatsApp
+        </a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- 公告栏 -->
+  <div id="announcement" class="announcement hidden"></div>
+
+  <!-- 欢迎区 -->
+  <section class="hero">
+    <div class="zh-badge">昌盛</div>
+    <h1>CHANG SHENG</h1>
+    <p class="sub">Comida china auténtica · Cocina al momento</p>
+    <p class="sub-zh">中华美食 · 新鲜现做 · 欢迎品尝</p>
+    <div class="hero-cta">
+      <a class="btn btn-gold" href="#menu">Ver el menú 🍜</a>
+      <a class="btn btn-outline" id="heroWaBtn" href="https://wa.me/56954663415" target="_blank" rel="noopener">Pedir por WhatsApp</a>
+    </div>
+  </section>
+
+  <!-- 分类导航 -->
+  <div class="catnav-wrap">
+    <div class="container">
+      <nav id="catNav" class="catnav"></nav>
+    </div>
+  </div>
+
+  <!-- 菜单 -->
+  <main class="container">
+    <div id="loading" class="loading">
+      <div class="spinner"></div>
+      Cargando menú…
+    </div>
+    <div id="errorBox" class="error-box hidden">
+      <p>😥 No se pudo cargar el menú en este momento.</p>
+      <p id="errorMsg" class="small muted"></p>
+      <button class="btn btn-red" onclick="location.reload()">Reintentar</button>
+    </div>
+    <div id="menuRoot"></div>
+  </main>
+
+  <!-- 如何下单 / 联系我们 -->
+  <section class="info-section" id="como-pedir">
+    <div class="container">
+      <div class="cat-head"><h2>¿Cómo pedir?</h2><span class="zh">如何下单</span></div>
+      <div class="info-grid">
+        <div class="info-card">
+          <div class="ic">🥢</div>
+          <h3>1 · Elige tus platos</h3>
+          <p>Agrega los platos que quieras al carrito tocando <b>+ Agregar</b>.</p>
+        </div>
+        <div class="info-card">
+          <div class="ic">🧾</div>
+          <h3>2 · Revisa tu carrito</h3>
+          <p>Toca el botón del carrito, revisa cantidades y escribe tu nombre, dirección y notas.</p>
+        </div>
+        <div class="info-card">
+          <div class="ic">💬</div>
+          <h3>3 · Confirma por WhatsApp</h3>
+          <p>Tu pedido se envía directo a nuestro WhatsApp y te confirmamos al instante.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="info-section" id="contacto">
+    <div class="container">
+      <div class="cat-head"><h2>Contacto</h2><span class="zh">联系我们</span></div>
+      <div class="info-grid">
+        <div class="info-card">
+          <div class="ic">📍</div>
+          <h3>Dirección / Retiro</h3>
+          <p id="contactAddress">—</p>
+        </div>
+        <div class="info-card">
+          <div class="ic">🕐</div>
+          <h3>Horario</h3>
+          <p id="contactHours">—</p>
+        </div>
+        <div class="info-card">
+          <div class="ic">💬</div>
+          <h3>WhatsApp</h3>
+          <p><a id="contactWa" href="https://wa.me/56954663415" target="_blank" rel="noopener">Escríbenos por WhatsApp</a></p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 页脚 -->
+  <footer>
+    <div class="container">
+      <div class="footer-top">
+        <div>
+          <div class="zh">昌盛 CHANG SHENG</div>
+          <p class="footer-sub">Comida china auténtica · Santiago, Chile</p>
+        </div>
+        <a class="btn btn-green" id="footWaBtn" href="https://wa.me/56954663415" target="_blank" rel="noopener">💬 Pedir por WhatsApp</a>
+      </div>
+      <div class="copyright">
+        <span>© <span id="year"></span> 昌盛 CHANG SHENG. Todos los derechos reservados.</span>
+        <a href="admin.html" style="text-decoration:none;color:inherit;">·</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- 悬浮购物车按钮 -->
+  <button id="cartFab" class="cart-fab" aria-label="Abrir carrito">
+    <svg viewBox="0 0 24 24"><path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49A1.003 1.003 0 0 0 20 4H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/></svg>
+    <span>Carrito</span>
+    <span id="cartCount" class="cart-count">0</span>
+  </button>
+
+  <!-- 购物车抽屉 -->
+  <div id="overlay" class="overlay"></div>
+  <aside id="cartDrawer" class="cart-drawer" aria-label="Carrito de compras">
+    <div class="cart-head">
+      <h2>🛒 Tu pedido</h2>
+      <button id="cartClose" class="cart-close" aria-label="Cerrar">✕</button>
+    </div>
+    <div class="cart-body">
+      <div id="cartEmpty" class="cart-empty">
+        <div class="big">🍽️</div>
+        Tu carrito está vacío.<br />Agrega algunos platos del menú.
+      </div>
+      <div id="cartLines"></div>
+    </div>
+
+    <div id="orderArea" class="hidden">
+      <form id="orderForm" class="order-form" novalidate>
+        <h3>Datos del pedido</h3>
+        <div class="field">
+          <label for="custName">Tu nombre *</label>
+          <input id="custName" type="text" autocomplete="name" placeholder="Ej: María Pérez" required />
+        </div>
+        <div class="field">
+          <label>Tipo de pedido</label>
+          <div class="radio-row">
+            <div class="radio-chip active" data-type="retiro">🛍️ Retiro en local</div>
+            <div class="radio-chip" data-type="despacho">🛵 Despacho a domicilio</div>
+          </div>
+        </div>
+        <div class="field" id="addrField">
+          <label id="addrLabel" for="custAddr">Dirección de entrega *</label>
+          <textarea id="custAddr" rows="2" placeholder="Ej: Av. Providencia 1234, depto 5, Santiago"></textarea>
+        </div>
+        <div class="field">
+          <label for="custNote">Nota (opcional)</label>
+          <textarea id="custNote" rows="2" placeholder="Ej: sin cebolla, salsa aparte…"></textarea>
+        </div>
+      </form>
+      <div class="order-foot">
+        <div class="total-row">
+          <span>Total a pagar</span>
+          <b id="cartTotal">$0</b>
+        </div>
+        <button id="waOrderBtn" class="btn btn-green btn-block" type="button">💬 Enviar pedido por WhatsApp</button>
+        <p class="small muted" style="text-align:center;margin:8px 0 0;">Se abrirá WhatsApp con tu pedido listo para enviar.</p>
+      </div>
+    </div>
+  </aside>
+
+  <!-- 脚本：顺序很重要 -->
+  <script src="js/config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/demo-data.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/site.js"></script>
+</body>
+</html>

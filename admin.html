@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>昌盛 CHANG SHENG · 管理后台</title>
+  <link rel="stylesheet" href="css/admin.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚙️</text></svg>" />
+</head>
+<body>
+
+  <!-- 顶部 -->
+  <header class="admin-top">
+    <div class="inner">
+      <div class="brand">
+        <span class="zh">昌</span>
+        <div>
+          CHANG SHENG · 管理后台
+          <div class="sub">在线修改菜单名称、价格与店铺信息</div>
+        </div>
+      </div>
+      <div class="admin-user" id="userBox" style="display:none;">
+        <span id="userEmail"></span>
+        <button class="btn-mini" id="logoutBtn">退出登录</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="wrap">
+
+    <!-- 未配置 Supabase 时的说明 -->
+    <section id="setupPanel" class="hidden">
+      <div class="card">
+        <h2>🔧 第一步：连接数据库（只需一次）</h2>
+        <p class="hint">管理后台需要连接 Supabase 云数据库才能保存你的修改。请按以下步骤操作：</p>
+        <ol class="setup-steps">
+          <li>打开 <b>https://supabase.com</b>，用邮箱免费注册并登录。</li>
+          <li>点击 <b>New project</b> 新建项目（免费 Free 套餐即可），记下项目密码。</li>
+          <li>项目建好后，打开左侧 <b>SQL Editor</b>，把本仓库 <code>supabase/schema.sql</code> 和 <code>supabase/seed.sql</code> 的内容依次粘贴进去，点 <b>Run</b> 执行（建表 + 写入示例菜单）。</li>
+          <li>打开左侧 <b>Authentication → Users</b>，点击 <b>Add user</b>，用你自己的邮箱和密码创建一个管理员账号。</li>
+          <li>打开左侧 <b>Settings → API</b>，复制 <b>Project URL</b> 和 <b>anon public key</b>。</li>
+          <li>编辑本仓库的 <code>js/config.js</code>，把两个值粘贴到 <code>supabaseUrl</code> 和 <code>supabaseAnonKey</code>，保存并重新发布到 GitHub Pages。</li>
+        </ol>
+        <p class="small muted">完成后刷新本页面，就会显示登录框。</p>
+      </div>
+    </section>
+
+    <!-- 登录 -->
+    <section id="authPanel" class="auth-box hidden">
+      <div class="auth-card">
+        <div class="logo">🥡</div>
+        <h1>管理后台登录</h1>
+        <p class="sub">CHANG SHENG · 昌盛</p>
+        <div class="field">
+          <label for="loginEmail">邮箱</label>
+          <input id="loginEmail" type="email" autocomplete="username" placeholder="tu@correo.com" />
+        </div>
+        <div class="field">
+          <label for="loginPass">密码</label>
+          <input id="loginPass" type="password" autocomplete="current-password" placeholder="••••••••" />
+        </div>
+        <p id="authErr" class="auth-err"></p>
+        <button class="btn btn-primary btn-block" id="loginBtn" style="width:100%;">登 录</button>
+      </div>
+    </section>
+
+    <!-- 管理主界面 -->
+    <section id="mainPanel" class="hidden">
+      <div class="tabs">
+        <button class="tab active" data-tab="menu">🍜 菜单管理</button>
+        <button class="tab" data-tab="settings">🏪 店铺设置</button>
+        <button class="tab" data-tab="help">📖 使用说明</button>
+      </div>
+
+      <!-- 菜单管理 -->
+      <div class="tab-panel" data-panel="menu">
+        <div class="card">
+          <h2>📂 分类管理</h2>
+          <p class="hint">分类 = 菜单上的分区（如 Entradas / Sopas）。名称填西班牙语，中文名可选。</p>
+          <div style="overflow-x:auto;">
+            <table class="tbl">
+              <thead>
+                <tr>
+                  <th style="width:34%;">西语名 (es)</th>
+                  <th style="width:30%;">中文名 (zh，可选)</th>
+                  <th style="width:16%;">排序</th>
+                  <th style="width:20%;">操作</th>
+                </tr>
+              </thead>
+              <tbody id="catRows"></tbody>
+            </table>
+          </div>
+          <div style="margin-top:12px;">
+            <button class="btn btn-ghost" id="addCatBtn">＋ 新增分类</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;">
+            <div>
+              <h2>🍽️ 菜品管理</h2>
+              <p class="hint">价格单位为智利比索 CLP，填整数（如 4500 = $4.500）。</p>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <select id="dishFilter" style="padding:8px 10px;border:1px solid var(--line);border-radius:9px;font-size:13.5px;">
+                <option value="">全部分类</option>
+              </select>
+              <button class="btn btn-primary" id="addDishBtn">＋ 新增菜品</button>
+            </div>
+          </div>
+          <div style="overflow-x:auto;">
+            <table class="tbl">
+              <thead>
+                <tr>
+                  <th>西语名</th>
+                  <th>中文名</th>
+                  <th>分类</th>
+                  <th class="num">价格 (CLP)</th>
+                  <th style="text-align:center;">在售</th>
+                  <th>排序</th>
+                  <th style="width:150px;">操作</th>
+                </tr>
+              </thead>
+              <tbody id="dishRows"></tbody>
+            </table>
+          </div>
+          <p id="dishEmpty" class="muted small" style="display:none;">还没有菜品，点右上角“新增菜品”添加。</p>
+        </div>
+      </div>
+
+      <!-- 店铺设置 -->
+      <div class="tab-panel hidden" data-panel="settings">
+        <div class="card" style="max-width:760px;">
+          <h2>🏪 店铺设置</h2>
+          <p class="hint">这些信息会显示在顾客网站的联系区、下单提示和 WhatsApp 消息里。</p>
+          <form id="settingsForm" class="form-grid">
+            <div>
+              <label>店铺名称 <small>(显示在 WhatsApp 消息开头)</small></label>
+              <input id="set_store_name" type="text" placeholder="昌盛 CHANG SHENG" />
+            </div>
+            <div>
+              <label>WhatsApp 号码 <small>(国家码+号码，如 56954663415)</small></label>
+              <input id="set_whatsapp" type="text" placeholder="56954663415" />
+            </div>
+            <div class="full">
+              <label>自取地址 <small>(西班牙语，显示在“联系/自取”区)</small></label>
+              <input id="set_address" type="text" placeholder="Dirección del local" />
+            </div>
+            <div class="full">
+              <label>营业时间 <small>(西班牙语)</small></label>
+              <input id="set_hours" type="text" placeholder="Lun - Dom: 12:00 - 22:00" />
+            </div>
+            <div class="full">
+              <label>顶部公告 <small>(可留空；例如节日通知或今日特价，西班牙语)</small></label>
+              <textarea id="set_announcement" rows="2" placeholder="Ej: Hoy arroz chaufa a mitad de precio 🎉"></textarea>
+            </div>
+            <div class="full form-actions">
+              <button class="btn btn-primary" type="submit">💾 保存设置</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- 使用说明 -->
+      <div class="tab-panel hidden" data-panel="help">
+        <div class="card">
+          <h2>📖 使用说明</h2>
+          <ol class="setup-steps">
+            <li><b>改菜单：</b>切到“菜单管理”，可以新增/删除分类和菜品、改西语名/中文名/价格/描述/图片、勾选“在售”来下架某道菜（顾客端显示 Agotado）。</li>
+            <li><b>改店铺信息：</b>切到“店铺设置”，修改店名、WhatsApp 号码、地址、营业时间和顶部公告，点保存。</li>
+            <li><b>改完立刻生效：</b>所有修改保存后，顾客刷新网站就能看到最新内容，无需重新发布代码。</li>
+            <li><b>菜品的图片：</b>在“编辑菜品”里粘贴图片网址（https://…）即可显示照片；留空则显示中文占位字。</li>
+            <li><b>顾客下单：</b>顾客加购 → 填姓名/地址 → 点按钮自动跳转你的 WhatsApp 并带上订单明细，你直接在 WhatsApp 回复确认即可。</li>
+            <li><b>换 WhatsApp 号码：</b>只需在“店铺设置”里改号码，全站和下单跳转会自动更新。</li>
+          </ol>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- 菜品编辑弹窗 -->
+  <div id="dishModal" class="modal-overlay">
+    <div class="modal">
+      <div class="modal-head">
+        <h3 id="dishModalTitle">新增菜品</h3>
+        <button class="x" id="dishModalClose" aria-label="关闭">✕</button>
+      </div>
+      <div class="modal-body">
+        <form id="dishForm" class="form-grid">
+          <div>
+            <label>分类 *</label>
+            <select id="dishCategory" required></select>
+          </div>
+          <div>
+            <label>在售？</label>
+            <div style="display:flex;align-items:center;gap:8px;padding-top:8px;">
+              <input type="checkbox" id="dishAvailable" checked style="width:18px;height:18px;accent-color:var(--red);" />
+              <span class="muted small">不勾选 = 顾客端显示“Agotado”</span>
+            </div>
+          </div>
+          <div>
+            <label>西语名 *</label>
+            <input id="dishNameEs" type="text" placeholder="Ej: Pollo Kung Pao" required />
+          </div>
+          <div>
+            <label>中文名（可选）</label>
+            <input id="dishNameZh" type="text" placeholder="Ej: 宫保鸡丁" />
+          </div>
+          <div>
+            <label>价格 (CLP) *</label>
+            <input id="dishPrice" type="number" min="0" step="100" placeholder="Ej: 7500" required />
+          </div>
+          <div>
+            <label>排序 <small>(小的排前面)</small></label>
+            <input id="dishSort" type="number" value="1" />
+          </div>
+          <div class="full">
+            <label>描述 <small>(西班牙语，可选)</small></label>
+            <textarea id="dishDesc" rows="2" placeholder="Ej: Pollo salteado con maní, ají y salsa agripicante."></textarea>
+          </div>
+          <div class="full">
+            <label>图片网址 <small>(可选，https://…)</small></label>
+            <input id="dishImage" type="url" placeholder="https://…/foto.jpg" />
+          </div>
+        </form>
+      </div>
+      <div class="modal-foot">
+        <button class="btn btn-ghost" id="dishModalCancel">取消</button>
+        <button class="btn btn-primary" id="dishModalSave">💾 保存</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <!-- 脚本 -->
+  <script src="js/config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/demo-data.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/admin.js"></script>
+</body>
+</html>
