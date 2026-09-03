@@ -450,6 +450,7 @@
           p.classList.toggle("hidden", p.getAttribute("data-panel") !== t.getAttribute("data-tab"));
         });
         if (t.getAttribute("data-tab") === "stats") loadStats();
+        window.scrollTo({ top: 0, behavior: "smooth" });
       });
     });
 

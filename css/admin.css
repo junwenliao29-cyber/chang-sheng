@@ -1,4 +1,6 @@
 /* ================= 昌盛 CHANG SHENG — 管理后台样式 ================= */
+.hidden { display: none !important; }
+
 :root {
   --red: #b0232a;
   --red-dark: #8f1a20;
