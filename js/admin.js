@@ -499,9 +499,8 @@
     // 弹窗
     $("#dishModalClose").addEventListener("click", closeDishModal);
     $("#dishModalCancel").addEventListener("click", closeDishModal);
-    $("#dishModal").addEventListener("click", (e) => { if (e.target === $("#dishModal")) closeDishModal(); });
     $("#dishModalSave").addEventListener("click", saveDish);
-    $("#dishForm").addEventListener("submit", (e) => { e.preventDefault(); saveDish(); });
+    $("#dishForm").addEventListener("submit", (e) => { e.preventDefault(); });
 
     // 图片上传：点击选择 / 拖拽 / 网址预览
     $("#dishImgDrop").addEventListener("click", () => $("#dishImgFile").click());
