@@ -370,12 +370,13 @@
     try {
       if (editingDishId) {
         await client.from("dishes").update(payload).eq("id", editingDishId);
-        toast("菜品已保存 ✅");
+        toast("菜品已保存 ✅（可继续修改，点 ✕/取消 关闭）");
       } else {
-        await client.from("dishes").insert(payload);
-        toast("菜品已添加 ✅");
+        const { data: ins, error: insErr } = await client.from("dishes").insert(payload).select();
+        if (insErr) throw insErr;
+        editingDishId = ins && ins[0] ? ins[0].id : editingDishId;
+        toast("菜品已添加 ✅（可继续修改，点 ✕/取消 关闭）");
       }
-      closeDishModal();
       await refresh();
     } catch (e) { toast(errMsg(e), "err"); }
   }
@@ -501,6 +502,10 @@
     $("#dishModalCancel").addEventListener("click", closeDishModal);
     $("#dishModalSave").addEventListener("click", saveDish);
     $("#dishForm").addEventListener("submit", (e) => { e.preventDefault(); });
+    $("#dishForm").addEventListener("keydown", (e) => {
+      // 输入框里按回车不要提交/关闭；多行备注(文本域)保留回车换行
+      if (e.key === "Enter" && e.target.tagName !== "TEXTAREA") e.preventDefault();
+    });
 
     // 图片上传：点击选择 / 拖拽 / 网址预览
     $("#dishImgDrop").addEventListener("click", () => $("#dishImgFile").click());
