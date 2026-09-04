@@ -42,13 +42,16 @@ window.Utils = (function () {
   function buildOrderText(storeName, lines, info) {
     let msg =
       "Hola " + storeName + "! Quiero hacer un pedido:\n\n" +
-      lines.join("\n") +
-      "\n\n" + (info.orderNumber ? "Nº de pedido: *#" + info.orderNumber + "*" : "Nombre: " + (info.name || "")) +
+      lines.join("\n");
+    if (info.totalCLP !== null && info.totalCLP !== undefined && !isNaN(Number(info.totalCLP))) {
+      msg += "\n\nTotal: " + formatCLP(Number(info.totalCLP));
+    }
+    msg += "\n\n" + (info.orderNumber ? "Nº de pedido: *#" + info.orderNumber + "*" : "Nombre: " + (info.name || "")) +
       "\nTipo: " + (info.type || "");
     if (info.address) msg += "\nDirección: " + info.address;
     if (info.location) msg += "\nUbicación: " + info.location;
     if (info.note) msg += "\nNota: " + info.note;
-    msg += "\n\nEl total te lo confirmamos por WhatsApp. ¡Gracias!";
+    msg += "\n\nEl total y tu pedido te los confirmamos por WhatsApp. ¡Gracias!";
     return msg;
   }
 

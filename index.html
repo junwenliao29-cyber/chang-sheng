@@ -208,8 +208,12 @@
       </form>
       <div class="order-foot">
         <p id="sentNote" class="sent-note hidden"></p>
+        <div class="total-row hidden" id="cartTotalRow">
+          <span>Total a pagar</span>
+          <b id="cartTotalText">$0</b>
+        </div>
         <button id="waOrderBtn" class="btn btn-green btn-block" type="button">💬 Enviar pedido por WhatsApp</button>
-        <p class="small muted" style="text-align:center;margin:8px 0 0;">El total te lo confirmamos por WhatsApp. Se abrirá WhatsApp con tu pedido listo para enviar.</p>
+        <p class="small muted" style="text-align:center;margin:8px 0 0;" id="orderNoteText"></p>
       </div>
     </div>
   </aside>

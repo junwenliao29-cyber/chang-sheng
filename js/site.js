@@ -229,13 +229,22 @@
     emptyEl.classList.add("hidden");
     orderArea.classList.remove("hidden");
 
+    const isRetiro = state.orderType === "retiro";
     linesEl.innerHTML = cart
       .map((it) => {
         const zh = it.name_zh ? '<span class="zh">' + U.escapeHTML(it.name_zh) + "</span>" : "";
+        const unit = U.escapeHTML(U.formatCLP(it.price_clp)) + " c/u";
+        const priceInfo = isRetiro
+          ? '<div class="cart-line-price">' + unit + "</div>"
+          : "";
+        const rightPrice = isRetiro
+          ? '<div class="cart-line-price"><b>' + U.escapeHTML(U.formatCLP(it.qty * it.price_clp)) + "</b></div>"
+          : "";
         return (
           '<div class="cart-line" data-id="' + U.escapeHTML(it.dishId) + '">' +
           '<div class="cart-line-info">' +
           '<div class="cart-line-name">' + U.escapeHTML(it.name_es) + zh + "</div>" +
+          priceInfo +
           '<div class="qty">' +
           '<button type="button" data-dec="' + U.escapeHTML(it.dishId) + '" aria-label="Menos">−</button>' +
           "<span>" + it.qty + "</span>" +
@@ -243,11 +252,26 @@
           "</div>" +
           "</div>" +
           '<div class="cart-line-right">' +
+          rightPrice +
           '<button type="button" class="cart-line-remove" data-del="' + U.escapeHTML(it.dishId) + '" aria-label="Quitar">🗑</button>' +
           "</div></div>"
         );
       })
       .join("");
+
+    // 合计：自取显示，配送不显示
+    const totalRow = $("#cartTotalRow");
+    if (totalRow) totalRow.classList.toggle("hidden", !isRetiro);
+    if (isRetiro) {
+      const tt = $("#cartTotalText");
+      if (tt) tt.textContent = U.formatCLP(cartOrderAmount());
+    }
+    const noteEl = $("#orderNoteText");
+    if (noteEl) {
+      noteEl.textContent = isRetiro
+        ? "Los precios corresponden a retiro en local. Confirmamos tu pedido por WhatsApp."
+        : "Despacho a domicilio: el total (incluye envío) te lo confirmamos por WhatsApp.";
+    }
   }
 
   function openCart() {
@@ -331,6 +355,7 @@
     document.querySelectorAll(".radio-chip").forEach((c) =>
       c.classList.toggle("active", c.getAttribute("data-type") === state.orderType)
     );
+    renderCart();
   }
 
   // 取号：连接数据库时用服务器原子计数器（不重复不乱序）；
@@ -447,10 +472,12 @@
         }
       }
 
-      // WhatsApp 消息格式：*数量 菜名*（例如 *2 Carne Mongoliana con arroz*）
-      const lines = cart.map(
-        (it) => "*" + it.qty + " " + it.name_es + "*"
-      );
+      // WhatsApp 消息：自取带价格/总价，配送不带价格
+      const lines = cart.map((it) => {
+        const head = "*" + it.qty + " " + it.name_es + "*";
+        if (isRetiro) return head + " — " + U.formatCLP(it.qty * (Number(it.price_clp) || 0));
+        return head;
+      });
       const s = menu.settings || {};
       const storeName = s.store_name || "CHANG SHENG";
       const phone = s.whatsapp_number || "56954663415";
@@ -462,6 +489,7 @@
         location: state.locationUrl,
         note: note,
         orderNumber: orderNumber,
+        totalCLP: isRetiro ? cartOrderAmount() : null,
       });
 
       const url = U.waLink(phone, msg);
