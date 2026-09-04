@@ -170,13 +170,6 @@ a { color: inherit; }
 .dish-name .zh { display: block; font-size: 12.5px; color: #96661f; font-weight: 600; letter-spacing: .5px; }
 .dish-price { white-space: nowrap; font-weight: 800; color: var(--red); font-size: 15.5px; }
 .dish-desc { font-size: 13px; color: var(--muted); margin: 6px 0 12px; flex: 1; }
-.dish-foot { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
-.add-btn {
-  border: 1.5px solid var(--red); color: var(--red); background: #fff;
-  border-radius: 999px; padding: 6px 14px; font-size: 13px; font-weight: 700; cursor: pointer;
-  transition: all .12s ease;
-}
-.add-btn:hover { background: var(--red); color: #fff; }
 .tag-soldout {
   background: #f1ece3; color: #9a8f7e; border-radius: 999px;
   padding: 5px 12px; font-size: 12px; font-weight: 700;
@@ -204,103 +197,6 @@ footer .container { padding: 26px 18px 20px; }
 
 .dish-card.soldout { opacity: .62; }
 .dish-card.soldout .dish-price { color: var(--muted); }
-/* ---------- 悬浮购物车按钮 ---------- */
-.cart-fab {
-  position: fixed; right: 18px; bottom: 18px; z-index: 70;
-  display: inline-flex; align-items: center; gap: 9px;
-  background: linear-gradient(180deg, #c92f36, #8f1a20); color: #fff;
-  border: none; border-radius: 999px; padding: 13px 20px; cursor: pointer;
-  font-size: 15px; font-weight: 700; box-shadow: 0 10px 26px rgba(143,26,32,.45);
-}
-.cart-fab svg { width: 20px; height: 20px; fill: #fff; }
-.cart-count {
-  background: var(--gold); color: #3a2c05; min-width: 21px; height: 21px;
-  border-radius: 999px; display: inline-flex; align-items: center; justify-content: center;
-  font-size: 12px; font-weight: 800; padding: 0 5px;
-}
-
-/* ---------- 购物车抽屉 ---------- */
-.overlay {
-  position: fixed; inset: 0; background: rgba(30,20,10,.45); z-index: 80;
-  opacity: 0; pointer-events: none; transition: opacity .2s ease;
-}
-.overlay.show { opacity: 1; pointer-events: auto; }
-.cart-drawer {
-  position: fixed; top: 0; right: 0; bottom: 0; width: min(470px, 100%);
-  background: #fff; z-index: 90; box-shadow: -10px 0 40px rgba(0,0,0,.18);
-  transform: translateX(105%); transition: transform .25s ease;
-  display: flex; flex-direction: column; overflow: hidden;
-}
-.cart-drawer.open { transform: translateX(0); }
-.cart-head {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 16px 18px; border-bottom: 1px solid var(--line);
-}
-.cart-head h2 { margin: 0; font-size: 18px; }
-.cart-close { border: none; background: #f3ece1; width: 34px; height: 34px; border-radius: 50%; font-size: 16px; cursor: pointer; }
-.cart-body {
-  flex: 1 1 0; min-height: 0; overflow-y: auto;
-  -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
-  padding: 6px 18px 12px;
-}
-.cart-empty { text-align: center; color: var(--muted); padding: 40px 10px; font-size: 14px; }
-.cart-empty .big { font-size: 40px; margin-bottom: 8px; }
-.cart-line {
-  display: flex; gap: 10px; align-items: center;
-  padding: 14px 2px; border-bottom: 1px dashed var(--line);
-}
-.cart-line-info { flex: 1; }
-.cart-line-name { font-weight: 700; font-size: 14px; }
-.cart-line-name .zh { color: var(--muted); font-weight: 400; margin-left: 5px; font-size: 12px; }
-.cart-line-price { font-size: 13px; color: var(--muted); margin-top: 2px; }
-.cart-line-price b { color: var(--red); }
-.qty { display: inline-flex; align-items: center; gap: 4px; margin-top: 8px; }
-.qty button {
-  width: 26px; height: 26px; border-radius: 50%; border: 1px solid var(--line);
-  background: #fff; cursor: pointer; font-size: 15px; line-height: 1; color: var(--ink);
-}
-.qty button:hover { border-color: var(--red); color: var(--red); }
-.qty span { min-width: 26px; text-align: center; font-weight: 700; }
-.cart-line-right { display: flex; flex-direction: column; align-items: flex-end; justify-content: center; gap: 6px; }
-.cart-line-remove { font-size: 17px; }
-.cart-line-remove {
-  border: none; background: transparent; color: #b0a08c; cursor: pointer; font-size: 18px; line-height: 1; padding: 4px;
-}
-.cart-line-remove:hover { color: var(--red); }
-
-/* 下单区域固定在底部、不挤压列表 */
-.order-area { flex: 0 0 auto; background: #fff; box-shadow: 0 -6px 16px rgba(120,60,20,.06); }
-/* 下单表单 */
-.order-form { padding: 12px 18px 0; border-top: 1px solid var(--line); }
-.order-form h3 { margin: 0 0 10px; font-size: 15px; }
-.field { margin-bottom: 11px; }
-.field label { display: block; font-size: 12.5px; font-weight: 700; color: var(--muted); margin-bottom: 5px; }
-.field input, .field textarea, .field select {
-  width: 100%; border: 1.5px solid var(--line); border-radius: 10px;
-  padding: 10px 12px; font-size: 14px; font-family: inherit; background: #fff;
-}
-.field input:focus, .field textarea:focus { outline: none; border-color: var(--red); }
-.radio-row { display: flex; gap: 10px; }
-.radio-chip {
-  flex: 1; text-align: center; padding: 9px 6px; border: 1.5px solid var(--line);
-  border-radius: 10px; cursor: pointer; font-size: 13.5px; font-weight: 600; background: #fff;
-}
-.radio-chip.active { border-color: var(--red); background: #fdeeee; color: var(--red); }
-.loc-btn {
-  background: #fff; color: var(--red); border: 1.5px solid var(--red);
-  border-radius: 999px; padding: 8px 16px; font-size: 13px; font-weight: 700; cursor: pointer;
-}
-.loc-btn:hover { background: var(--red); color: #fff; }
-.loc-btn:disabled { opacity: .6; cursor: wait; }
-.order-foot { padding: 12px 18px 20px; }
-.sent-note {
-  background: #e6f7ea; color: #1e6b24; border: 1px solid #b9e3c2;
-  border-radius: 10px; padding: 9px 12px; font-size: 13px; line-height: 1.5;
-  margin-bottom: 10px;
-}
-.total-row { display: flex; justify-content: space-between; font-size: 15px; margin-bottom: 10px; }
-.total-row b { font-size: 18px; color: var(--red); }
-
 /* ---------- 加载 / 错误 ---------- */
 .loading, .error-box { text-align: center; padding: 60px 20px; color: var(--muted); }
 .error-box .retry { margin-top: 12px; }
