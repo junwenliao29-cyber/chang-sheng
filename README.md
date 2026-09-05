@@ -1,140 +1,146 @@
-# 昌盛 CHANG SHENG · 中餐馆点餐网站
+# 昌盛 CHANG SHENG · 中餐馆网站（纯菜单版）
 
-一个给智利中餐馆 **昌盛 CHANG SHENG** 用的单页点餐网站：
+智利中餐馆 **昌盛 CHANG SHENG** 的官方网站与后台：
 
-- 🍜 顾客看到**西班牙语菜单**，可按分类浏览菜品、加入**购物车**
-- 💬 点“下单”后自动把订单（菜品清单 + 总价 + 顾客信息）发到老板的 **WhatsApp**
-- 🔐 老板登录 **管理后台**（`admin.html`），可随时在线**修改菜名、价格、分类、图片、上下架**和店铺信息，顾客刷新即可看到
+- 🍜 **顾客网站**（`index.html`，西班牙语）：展示菜单（分类 + 菜品 + 价格），下架菜显示 “Agotado”；客人点 WhatsApp 按钮直接联系餐厅
+- 🔐 **管理后台**（`admin.html`，中文界面）：登录后可在线上改**菜名、价格、分类、图片、上下架、店铺信息（地址/营业时间/WhatsApp/Google Maps 链接）**，顾客刷新即可看到
+- 📊 后台带**访问统计**（每天/每个时段多少人浏览），以及**菜品手动排序**、**图片上传（本地/拖拽）**
 
-> 网站是纯静态页面（HTML/CSS/JS），可免费托管在 **GitHub Pages**；菜单数据存放在免费的 **Supabase** 云数据库里。无需服务器。
+> 纯静态网页（HTML/CSS/JS，**无需 Node 构建**），托管在 **GitHub Pages**；数据存在免费的 **Supabase** 云数据库。无论 macOS 还是 **Windows** 都能开发和部署。
 
 ---
 
 ## 目录结构
 
 ```
-├── index.html           顾客点餐网站（西班牙语，单页）
-├── admin.html           管理后台（老板用，中文界面）
+├── index.html           顾客网站（西班牙语）
+├── admin.html           管理后台（中文界面）
 ├── css/
 │   ├── site.css         顾客网站样式
 │   └── admin.css        管理后台样式
 ├── js/
-│   ├── config.js        ★ 放 Supabase 地址和密钥的地方（需要你填写）
+│   ├── config.js        ★ Supabase 配置（地址 + 公钥）——换电脑后要确认没被还原
+│   ├── supabase.js      本地化 Supabase 组件（不用联网 CDN）
 │   ├── utils.js         公共小工具
-│   ├── demo-data.js     演示数据（未连接数据库时使用）
-│   ├── data.js          数据层：自动切换演示/数据库模式
+│   ├── demo-data.js     演示数据（未连接数据库时自动使用）
+│   ├── data.js          数据层（自动切换 演示 / Supabase）
 │   ├── site.js          顾客网站逻辑
 │   └── admin.js         管理后台逻辑
 └── supabase/
     ├── schema.sql       建表 + 安全策略（在 Supabase SQL Editor 运行）
-    └── seed.sql         示例菜单数据（在 Supabase SQL Editor 运行）
+    ├── seed.sql         示例菜单（可选，在 Supabase SQL Editor 运行）
+    ├── migration-stats.sql      统计 + 图片存储（可选）
+    └── migration-ordernum.sql   取餐号（如以后恢复点餐再用）
 ```
 
 ---
 
-## 本地预览（可选）
+## 在 Windows 上本地预览
 
-不需要联网，先看看效果。在项目文件夹里运行：
+推荐用 **VS Code + Live Server**（最简单）：
 
-```bash
-python3 -m http.server 8000
+1. 安装 [VS Code](https://code.visualstudio.com/)
+2. 在 VS Code 扩展里搜并安装 **Live Server**
+3. 用 VS Code 打开本项目文件夹 → 右键 `index.html` → **Open with Live Server**
+4. 浏览器会自动打开 `http://127.0.0.1:5500/`；`admin.html` 同样方式打开
+
+也可以用命令行（二选一）：
+
+```powershell
+# 方法 A：装了 Python
+python -m http.server 8000
+
+# 方法 B：装了 Node.js
+npx serve .
 ```
 
-浏览器打开 <http://localhost:8000> 即可预览顾客网站；打开 <http://localhost:8000/admin.html> 查看管理后台。
+然后访问 <http://localhost:8000>（或 npx serve 提示的地址）。
 
-> 注意：未连接 Supabase 前，网站顶部会显示“演示模式”，使用的是内置示例菜单，方便预览。连接数据库后自动消失。
+> ⚠️ 别直接双击 `index.html` 用 `file://` 打开：浏览器可能因跨域限制导致连不上 Supabase、图片/数据加载异常。请用上面的本地服务器方式。
 
 ---
 
-## 上线步骤
+## 把修改发布上线（Windows 上也能做）
 
-### 第一步：把代码发布到 GitHub（免费托管网站）
-
-1. 在 GitHub 上**新建一个仓库**（例如叫 `changsheng-restaurante`），不要勾选“添加 README”。
-2. 在电脑上把代码推上去：
+网站靠 Git + GitHub Pages 发布。在 Windows 上安装 [Git for Windows](https://git-scm.com/)，然后在项目文件夹打开 **Git Bash**（右键菜单里有）：
 
 ```bash
-cd 你的项目文件夹
-git init
 git add .
-git commit -m "昌盛 CHANG SHENG 网站"
-git branch -M main
-git remote add origin https://github.com/你的用户名/changsheng-restaurante.git
-git push -u origin main
-```
-
-3. 在 GitHub 仓库页面打开 **Settings → Pages**：
-   - Source 选择 `Deploy from a branch`
-   - Branch 选择 `main`，目录选 `/ (root)`
-   - 点 **Save**
-4. 等 1~2 分钟后，网站地址就是：
-   `https://你的用户名.github.io/changsheng-restaurante/`
-   （顾客网站；`admin.html` 就是管理后台地址）
-
-### 第二步：创建 Supabase 数据库（免费）
-
-1. 打开 <https://supabase.com>，用邮箱免费注册并登录。
-2. 点 **New project** 新建项目（**Free 免费套餐**即可），设置数据库密码并记好，选择离智利较近的区域。
-3. 项目创建后，点左侧 **SQL Editor**：
-   - 先打开本项目里的 `supabase/schema.sql`，全选复制粘贴到编辑器，点 **Run**
-   - 再打开 `supabase/seed.sql`，同样粘贴并 **Run**
-   - 成功后会看到绿色提示（建好分类、菜品、设置表并写入示例菜单）
-4. 点左侧 **Authentication → Users → Add user**，用你自己的**邮箱和密码**创建管理员账号（这就是登录后台的账号）。
-5. 点左侧 **Settings → API**，复制两个值：
-   - **Project URL**
-   - **anon public key**
-6. 打开项目里的 `js/config.js`，粘贴到对应位置并保存：
-
-```js
-window.APP_CONFIG = {
-  supabaseUrl: "https://你的项目.supabase.co",   // ← Project URL
-  supabaseAnonKey: "eyJhbGciOi...",               // ← anon public key
-};
-```
-
-7. 把修改提交并推送：
-
-```bash
-git add js/config.js
-git commit -m "配置 Supabase"
+git commit -m "修改了 xxx"
 git push
 ```
 
-8. 刷新你的网站和 `admin.html`，用刚才创建的管理员邮箱/密码登录，就可以开始改菜单了！
+> 第一次在 Windows 上使用如果提示要登录，会弹出浏览器让你登录 GitHub 授权一次。
+> 不想用命令的话，也可以装 **GitHub Desktop**：打开仓库 → 输入摘要 → Commit → Push。
+
+推送后等约 1 分钟，GitHub Pages 自动更新：
+
+- 顾客网站：<https://junwenliao29-cyber.github.io/chang-sheng/>
+- 管理后台：<https://junwenliao29-cyber.github.io/chang-sheng/admin.html>
+
+> 若以后换了 GitHub 账号/仓库，改一下这里两个网址即可（代码本身不用重做）。
 
 ---
 
-## 管理后台怎么用
+## 换电脑 / 换系统后要做的 3 件事
 
-| 想做什么 | 怎么做 |
-| --- | --- |
-| 改菜名/价格/描述 | 菜单管理 → 菜品那行点“编辑” |
-| 下架某道菜 | 编辑里取消勾选“在售”（顾客端显示 Agotado） |
-| 加新菜 / 新分类 | 点“＋新增菜品 / ＋新增分类” |
-| 删除菜 / 分类 | 对应行点“删除”（删分类会连带删除其下菜品） |
-| 改 WhatsApp 号码 | 店铺设置里改（只需改一次，全站和下单都会更新） |
-| 改店名/地址/营业时间/公告 | 店铺设置里改，点保存 |
+1. **把代码从 GitHub 克隆下来**
 
-所有修改**保存后立即生效**：顾客刷新网站就能看到最新菜单，不用重新发布代码。
+```bash
+git clone https://github.com/junwenliao29-cyber/chang-sheng.git
+cd chang-sheng
+```
+
+2. **确认 `js/config.js` 已填好**（克隆下来会保留已提交的配置，通常不用动）：
+
+```js
+window.APP_CONFIG = {
+  supabaseUrl: "https://你的项目.supabase.co",
+  supabaseAnonKey: "你的 anon/publishable key",
+};
+```
+
+3. **本地预览一遍**（见上文）→ 改东西 → `git add . && git commit -m "..." && git push`
+
+数据库（菜单、图片、统计）都在 **Supabase 云端**，跟电脑无关，换电脑**数据不会丢**，无需重新建表。
+
+---
+
+## 修改 Supabase 数据库（换到新项目时才需要）
+
+一般**不需要**再动数据库。只有当你新建了 Supabase 项目、或旧表结构缺失时才需要：
+
+1. 打开 <https://supabase.com> → 你的项目 → 左侧 **SQL Editor**
+2. 依次粘贴并 Run：
+   - `supabase/schema.sql`（建表 + 安全策略）
+   - 需要统计/图片时：`supabase/migration-stats.sql`
+   - 需要取餐号时：`supabase/migration-ordernum.sql`
+3. 左侧 **Authentication → Users → Add user** 建管理员账号（登录后台用）
+4. 把项目 **Settings → API** 里的 Project URL 和 anon(publishable) key 填进 `js/config.js`
+
+> SQL 脚本都是“可重复执行”的（用 `create ... if not exists`），重复 Run 不会报错。
+
+---
+
+## Windows 开发注意事项
+
+- **编码**：所有文件都是 **UTF-8（无 BOM）**。改代码时请用 VS Code 等现代编辑器，**不要用 Windows 记事本**保存，否则中文可能变乱码。
+- **换行符**：仓库已带 `.gitattributes`，会把文件统一成 LF，避免每次切系统出现大量“改了整行”的假差异。
+- **命令行**：用 **Git Bash** 或 VS Code 终端执行 git/python 命令（PowerShell 也能用，但路径/命令写法略有差异）。
+- **图片上传**：后台传图需要登录管理员账号；上传的图片存在 Supabase Storage，和本地文件无关。
 
 ---
 
 ## 常见问题
 
-**Q：顾客下单后我怎么收到？**
-顾客填好名字和地址点“发送”，会自动打开 WhatsApp 并带着写好的订单消息发到你的号码（默认 `+56 9 5466 3415`）。你在 WhatsApp 里回复确认即可。
+**Q：本地能看，但线上没更新？**
+改完后要 `git push` 成功，再等约 1 分钟刷新页面（必要时 `Ctrl+F5` 强刷）。如果是后台改动，也要强刷后台页。
 
-**Q：想换 WhatsApp 号码？**
-在管理后台“店铺设置”里改 WhatsApp 号码并保存，全站按钮和下单跳转会自动更新。
+**Q：后台登录报错 / 空白？**
+确认 `js/config.js` 已填、`supabase.js` 本地文件存在、数据库脚本已运行、并在 Supabase 建过管理员账号。
 
-**Q：菜品照片怎么加？**
-编辑菜品时在“图片网址”粘贴一张图片的链接（如 https://…）。留空则显示中文占位字。照片可以先传到免费图床（如 Imgur / Postimages）再粘贴链接。
-
-**Q：演示模式的提示怎么消失？**
-按上面第二步连接好 Supabase 并填写 `js/config.js` 后自动消失。
-
-**Q：改了价格顾客看不到？**
-刷新顾客网页即可。若仍看不到，多半是 `js/config.js` 没填对或还没推送部署。
+**Q：顾客下单流程？**
+纯菜单版不包含购物车：客人看菜单后点 WhatsApp 按钮，把想点的菜直接发给你，你回复总价和时间即可。
 
 ---
 

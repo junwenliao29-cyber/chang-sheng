@@ -1,0 +1,13 @@
+# 统一换行符：避免 Windows/macOS 之间出现整文件假差异
+* text=auto eol=lf
+
+# 明确声明常见文本类型
+*.html text eol=lf
+*.css  text eol=lf
+*.js   text eol=lf
+*.json text eol=lf
+*.md   text eol=lf
+*.sql  text eol=lf
+*.py   text eol=lf
+*.gitattributes text eol=lf
+*.gitignore text eol=lf
