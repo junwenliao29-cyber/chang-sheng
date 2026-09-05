@@ -1,0 +1,129 @@
+# 昌盛 CHANG SHENG 项目交接说明（给 AI 开发用）
+
+> 用途：本文件是给 **AI 助手** 的完整项目说明书。老板（中文沟通）在 Windows/macOS 上新建对话时，把本文件整段发给 AI，AI 即可直接接手开发，无需重新摸索。
+> 更详细的部署/开发步骤见同目录 `README.md`；两者配合使用。
+
+---
+
+## 1. 项目是什么
+
+智利中餐馆 **昌盛 CHANG SHENG** 的官方网站（**当前 = 纯菜单版**，无购物车、无线上下单表单）：
+
+- **顾客网站** `index.html`：西班牙语，展示分类菜单、菜品（西语名+中文名+描述+价格）、下架菜显示 Agotado；页面上方/底部有 WhatsApp 按钮，客人点了直接和老板聊天下单。
+- **管理后台** `admin.html`：中文界面，老板登录后可在线改菜名/价格/分类/图片/上下架/排序/店铺信息，顾客刷新即生效。
+- 托管在 **GitHub Pages**，数据在 **Supabase** 云端（免费）。
+
+## 2. 版本历史（重要，别搞混）
+
+- 早期做过“购物车 + 自取/配送 + WhatsApp 自动发单 + 取餐号”功能。
+- **老板后来要求删掉购物车和配送下单，改为纯菜单网站** → 现在的 `index.html` / `js/site.js` 是纯菜单版。
+- 数据库里仍保留 `events`（统计表）、`order_counter`（取餐号）等表和函数，**目前网站已不调用下单/取号逻辑**，但**不要删除这些表/函数/后台面板**，老板以后可能恢复点餐。
+- 历史提交都在 git 里，可查。
+
+## 3. 技术栈（没有 Node 构建！）
+
+- 纯静态：HTML + CSS + JavaScript（原生，无框架、无打包）。
+- Supabase 组件是**本地文件** `js/supabase.js`（v2 UMD），**不要改回 CDN**（之前 CDN 加载失败导致后台登录报错）。
+- 无需 Node/npm；本地预览用静态服务器即可（Live Server 或 `python -m http.server 8000`）。
+- GitHub Pages 自动部署 main 分支。
+
+## 4. 网址与仓库
+
+- 顾客网站：https://junwenliao29-cyber.github.io/chang-sheng/
+- 管理后台：https://junwenliao29-cyber.github.io/chang-sheng/admin.html
+- 仓库：https://github.com/junwenliao29-cyber/chang-sheng （分支 `main`，GitHub Pages 已开）
+- 若老板换了 GitHub 账号/仓库，克隆新地址并把上面两个网址改成新的即可。
+
+## 5. 文件地图
+
+```
+index.html        顾客网站（西班牙语）
+admin.html        管理后台（中文界面）
+rpd.md            本文件（给 AI 的交接说明）
+README.md         人类/开发说明（含 Windows 指南）
+.gitattributes    统一 LF 换行，防止 Windows/macOS 差异
+css/site.css      顾客网站样式
+css/admin.css     管理后台样式
+js/config.js      ★ Supabase 地址+公钥（读取这里的值，不要在别处写死）
+js/supabase.js    本地 Supabase 组件（勿换 CDN）
+js/utils.js       工具：价格格式($4.500)、wa.me 链接、消息生成等
+js/demo-data.js   演示数据（Supabase 未配置时自动用）
+js/data.js        数据层（演示/Supabase 自动切换）
+js/site.js        顾客网站逻辑
+js/admin.js       管理后台逻辑
+supabase/schema.sql            建表+RLS（全新项目用）
+supabase/seed.sql              示例菜单（可选）
+supabase/migration-stats.sql   统计+图片存储（可重复执行）
+supabase/migration-ordernum.sql 取餐号（保留备用）
+```
+
+## 6. 数据库（Supabase）
+
+- 项目 URL 与 anon(publishable) key：见 `js/config.js`（公钥，可公开，不是 secret；**secret/service_role 永不写入代码或发给别人**）。
+- 表：
+  - `categories`：id, name_es, name_zh, sort_order
+  - `dishes`：id, category_id(外键,级联删除), name_es, name_zh, description, price_clp(整数CLP), image_url, available, sort_order
+  - `settings`：key-value；已有 key：store_name, whatsapp_number, address, map_link, hours, announcement
+  - `events`：统计 type(view/order), session_id, amount_clp, created_at；RLS：可写入(anon+auth)，仅 authenticated 可读
+  - `order_counter`：取餐号计数（备用）
+- Storage 桶：`dish-images`（公开读；仅登录管理员传/改/删）。
+- RLS 要点：顾客网站用公钥只能读菜单/写统计；后台登录（Supabase Auth）后才能改数据。
+- 函数：`next_order_number` / `current_order_number` / `set_order_number` / `reset_order_number`（后台“取餐号”面板用，目前顾客端不调）。
+- 改数据库结构时：只更新 `supabase/*.sql`，并让老板去 Supabase → SQL Editor 运行（AI 没有数据库管理员权限）。
+
+## 7. 当前功能清单
+
+顾客网站：
+- 顶部金红回纹条 + 中式牌匾欢迎区（四角回纹 + 红印章“中华”）
+- 分类导航、菜品卡片（图片占位/中文大字、价格智利格式如 $4.500、Agotado 置灰）
+- 公告栏（settings.announcement）
+- Contacto：地址/营业时间/WhatsApp/Google Maps 带路按钮（settings.map_link）
+- 所有 WhatsApp 按钮默认文案：`Hola! Quiero hacer un pedido.`
+- 访问统计：每次打开记 1 条 view（同一浏览器每天 1 次，keepalive 请求）
+
+管理后台：
+- Supabase Auth 邮箱+密码登录
+- 菜单管理：分类增删改、菜品增删改；**手动排序**（↑/↓ 按钮 + 排序数字框）；**图片上传**（点选/拖拽/网页图片网址）
+- 店铺设置：店名、WhatsApp 号码、地址、Google Maps 链接、营业时间、公告
+- 访问统计：今日/近60天 访问、下单、销售额、时段分布（下单/销售额目前为 0，因为纯菜单版无下单）
+- 取餐号面板：查看/改成指定号/重置（保留备用）
+- 使用说明标签页
+
+## 8. 沟通与文案约定（务必遵守）
+
+- **老板用中文提需求**，需求沟通用中文。
+- **顾客网站一切文案用西班牙语**；中文只出现在中文名/装饰字里。
+- 风格：中式、红金配色、**含蓄不突兀**。老板之前明确删掉了“巨大背景昌字水印”和“竖排小字”，不喜欢夸张元素；加装饰前先想是否太抢眼。
+- **不要**在自动生成的 WhatsApp 消息里用 emoji/星号平面字符（之前出现过 � 乱码）；可加粗用 `*文字*`（WhatsApp 语法，安全）。
+- **不要**在 HTML/JS 里再引入已删除的购物车 id（cartFab/cartDrawer/custName/locBtn/waOrderBtn 等）或旧逻辑，除非老板明确要求恢复点餐。
+- 中文文本里 空格断行 用半角；文件一律 UTF-8 无 BOM。
+
+## 9. 后台编辑弹窗防坑
+
+- 编辑菜品弹窗**只在点 ✕/取消 时关闭**；保存后不自动关（防止老板以为被误关）。按回车不会触发保存。
+- 若改动涉及 `admin.js`/`admin.css`，记得 `.hidden { display:none !important; }` 规则在 `admin.css` 里已存在，别误删。
+
+## 10. AI 接手后的标准工作流
+
+1. 克隆/拉取仓库：`git clone https://github.com/junwenliao29-cyber/chang-sheng.git`（已在机器上则 `git pull`）。
+2. 先读 `rpd.md` + `README.md`，再看相关源码。
+3. 按老板本次需求修改代码。
+4. 自测：JS 改完至少跑 `node --check 文件名.js`；本地起服务器（`python -m http.server 8000` 或 Live Server）肉眼过一遍顾客站和后台。
+5. 提交并推送：`git add . && git commit -m "改了什么" && git push`（GitHub Pages 约 1 分钟自动上线）。
+6. 把网址发给老板，提醒强刷（`Ctrl+F5` / `Cmd+Shift+R`）验收；有 bug 继续修。
+7. 每次小步改动、及时推送，不要攒一堆；老板随时要能预览。
+
+## 11. 不要把以下内容写进代码/发给别人
+
+- Supabase service_role / secret key、任何密码、GitHub token（这些只在老板本人操作时使用）。
+- 老板的个人隐私。
+
+## 12. 可能的后续需求（等老板开口再动）
+
+- 恢复“点某道菜直接跳 WhatsApp 发这道菜”按钮（纯菜单版还没加）。
+- 恢复购物车/取餐号/统计下单（老板之前改主意过，恢复前先和老板确认要哪个版本）。
+- 自定义域名（如 changsheng.cl）让网址更短。
+
+---
+
+（本文档随代码一起提交到仓库；每次重要改动后建议让 AI 顺手更新本文件的“当前功能清单”。）
