@@ -199,3 +199,22 @@ textarea { resize: vertical; min-height: 72px; }
 .hour-col .cnt { font-size: 10.5px; color: #7a7063; margin-top: 3px; }
 .hour-col.hot { background: #fdeeee; }
 @media (max-width: 700px) { .hour-grid { grid-template-columns: repeat(6, 1fr); } }
+
+
+/* ================= 拖动排序 ================= */
+.tbl td.drag-handle {
+  width: 26px;
+  text-align: center;
+  cursor: grab;
+  color: #c2b49a;
+  font-size: 14px;
+  line-height: 1;
+  user-select: none;
+  white-space: nowrap;
+}
+.tbl td.drag-handle:active { cursor: grabbing; }
+.tbl tr.dragging td { opacity: .45; background: #fdf6ec !important; }
+.tbl tr.drop-before td { box-shadow: inset 0 2px 0 var(--red); }
+.tbl tr.drop-after td { box-shadow: inset 0 -2px 0 var(--red); }
+.modal-foot { flex-wrap: wrap; }
+.modal-tip { margin-right: auto; align-self: center; }

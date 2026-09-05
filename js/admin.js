@@ -238,11 +238,14 @@
   function catRowHTML(c) {
     const id = c ? U.escapeHTML(c.id) : "";
     return (
-      '<tr data-cat-id="' + id + '">' +
+      '<tr data-cat-id="' + id + '" draggable="true">' +
+      '<td class="drag-handle" title="按住拖动排序">⠿</td>' +
       '<td><input class="cat-es" type="text" value="' + (c ? U.escapeHTML(c.name_es) : "") + '" placeholder="Ej: Entradas" /></td>' +
       '<td><input class="cat-zh" type="text" value="' + (c ? U.escapeHTML(c.name_zh || "") : "") + '" placeholder="可选" /></td>' +
       '<td><input class="cat-sort num" type="number" value="' + (c ? U.escapeHTML(String(c.sort_order || 0)) : cats.length + 1) + '" /></td>' +
       '<td><div class="row-actions">' +
+      (c ? '<button type="button" class="btn btn-sm btn-ghost cat-mv" data-dir="-1" title="上移">↑</button>' +
+        '<button type="button" class="btn btn-sm btn-ghost cat-mv" data-dir="1" title="下移">↓</button>' : "") +
       '<button class="btn btn-sm btn-primary save-cat">保存</button>' +
       (c ? '<button class="btn btn-sm btn-danger del-cat">删除</button>' : '<button class="btn btn-sm btn-ghost cancel-cat">取消</button>') +
       "</div></td></tr>"
@@ -306,7 +309,8 @@
       .map((d) => {
         const on = d.available !== false;
         return (
-          '<tr data-dish-id="' + U.escapeHTML(d.id) + '">' +
+          '<tr data-dish-id="' + U.escapeHTML(d.id) + '" draggable="true">' +
+          '<td class="drag-handle" title="按住拖动排序">⠿</td>' +
           "<td><b>" + U.escapeHTML(d.name_es) + "</b></td>" +
           "<td>" + U.escapeHTML(d.name_zh || "") + "</td>" +
           "<td>" + U.escapeHTML(catName(d.category_id)) + "</td>" +
@@ -376,7 +380,7 @@
     } catch (e) { toast(errMsg(e), "err"); }
   }
 
-  function openDishModal(dish) {
+  function openDishModal(dish, preferredCatId) {
     editingDishId = dish ? dish.id : null;
     $("#dishModalTitle").textContent = dish ? "编辑菜品" : "新增菜品";
     // 分类下拉
@@ -384,7 +388,9 @@
     catSel.innerHTML = cats
       .map((c) => '<option value="' + U.escapeHTML(c.id) + '">' + U.escapeHTML(c.name_es) + "</option>")
       .join("");
-    const preferred = dish ? dish.category_id : $("#dishFilter").value || (cats[0] && cats[0].id) || "";
+    const preferred = dish
+      ? dish.category_id
+      : preferredCatId || $("#dishFilter").value || (cats[0] && cats[0].id) || "";
     catSel.value = cats.some((c) => c.id === preferred) ? preferred : (cats[0] && cats[0].id) || "";
 
     $("#dishNameEs").value = dish ? dish.name_es : "";
@@ -433,12 +439,12 @@
     try {
       if (editingDishId) {
         await client.from("dishes").update(payload).eq("id", editingDishId);
-        toast("菜品已保存 ✅（可继续修改，点 ✕/取消 关闭）");
+        toast("菜品已保存 ✅（可继续修改；按 Esc/空格 或 ✕ 关闭）");
       } else {
         const { data: ins, error: insErr } = await client.from("dishes").insert(payload).select();
         if (insErr) throw insErr;
         editingDishId = ins && ins[0] ? ins[0].id : editingDishId;
-        toast("菜品已添加 ✅（可继续修改，点 ✕/取消 关闭）");
+        toast("菜品已添加 ✅（可继续录入下一道，或按 Esc/空格 关闭）");
       }
       await refresh();
     } catch (e) { toast(errMsg(e), "err"); }
@@ -453,6 +459,196 @@
     } catch (e) { toast(errMsg(e), "err"); }
   }
 
+  /* ---------------- 拖动排序（分类 + 菜品，保留 ↑/↓ 与数字框） ---------------- */
+  function isEditableTarget(t) {
+    return !!(t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || t.isContentEditable === true));
+  }
+
+  /* ---- 分类排序 ---- */
+  function renumberCatSortInputs() {
+    const tb = $("#catRows");
+    if (!tb) return;
+    Array.prototype.forEach.call(tb.querySelectorAll("tr"), (tr, i) => {
+      const inp = tr.querySelector(".cat-sort");
+      if (inp) inp.value = i + 1;
+    });
+  }
+  function syncCatArrayFromDom() {
+    const tb = $("#catRows");
+    if (!tb) return;
+    const order = [];
+    Array.prototype.forEach.call(tb.querySelectorAll("tr[data-cat-id]"), (tr) => {
+      const id = tr.getAttribute("data-cat-id");
+      if (id) order.push(id);
+    });
+    cats.sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id));
+    cats.forEach((c, i) => { c.sort_order = i + 1; });
+  }
+  async function persistCatOrderFromDom() {
+    if (!client) return;
+    try {
+      await Promise.all(
+        cats.map((c) => client.from("categories").update({ sort_order: c.sort_order }).eq("id", c.id))
+      );
+      toast("分类顺序已更新 ✅");
+    } catch (e) {
+      toast(errMsg(e), "err");
+      await refresh();
+    }
+  }
+  async function moveCatRow(btn) {
+    if (!client) return;
+    const tr = btn.closest("tr");
+    if (!tr) return;
+    const dir = parseInt(btn.getAttribute("data-dir"), 10) || 0;
+    const tb = $("#catRows");
+    const rows = Array.prototype.filter.call(tb.querySelectorAll("tr[data-cat-id]"), (r) => r.getAttribute("data-cat-id") !== "");
+    const idx = rows.indexOf(tr);
+    if (idx < 0) return;
+    const t = idx + dir;
+    if (t < 0 || t >= rows.length) return;
+    tb.insertBefore(tr, dir < 0 ? rows[t] : rows[t].nextSibling);
+    renumberCatSortInputs();
+    syncCatArrayFromDom();
+    await persistCatOrderFromDom();
+  }
+  let catDragRow = null;
+  function clearCatDropMarks() {
+    const tb = $("#catRows");
+    if (tb) Array.prototype.forEach.call(tb.querySelectorAll("tr"), (tr) => tr.classList.remove("drop-before", "drop-after"));
+  }
+  function clearCatDragUI() {
+    clearCatDropMarks();
+    const tb = $("#catRows");
+    if (tb) Array.prototype.forEach.call(tb.querySelectorAll("tr"), (tr) => tr.classList.remove("dragging"));
+  }
+  function bindCatDrag() {
+    const tb = $("#catRows");
+    if (!tb) return;
+    tb.addEventListener("dragstart", (e) => {
+      const tr = e.target.closest("tr");
+      if (!tr || !tr.getAttribute("data-cat-id") || isEditableTarget(e.target) || e.target.closest("button")) {
+        e.preventDefault();
+        return;
+      }
+      catDragRow = tr;
+      tr.classList.add("dragging");
+      try {
+        e.dataTransfer.effectAllowed = "move";
+        e.dataTransfer.setData("text/plain", tr.getAttribute("data-cat-id") || "");
+      } catch (err) { /* 某些浏览器限制 setData */ }
+    });
+    tb.addEventListener("dragover", (e) => {
+      if (!catDragRow) return;
+      const tr = e.target.closest("tr");
+      if (!tr || tr === catDragRow || !tr.getAttribute("data-cat-id")) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
+      clearCatDropMarks();
+      const rect = tr.getBoundingClientRect();
+      tr.classList.add(e.clientY > rect.top + rect.height / 2 ? "drop-after" : "drop-before");
+    });
+    tb.addEventListener("drop", (e) => {
+      if (!catDragRow) return;
+      e.preventDefault();
+      const tr = e.target.closest("tr");
+      if (tr && tr !== catDragRow && tr.getAttribute("data-cat-id")) {
+        const rect = tr.getBoundingClientRect();
+        tb.insertBefore(catDragRow, e.clientY > rect.top + rect.height / 2 ? tr.nextSibling : tr);
+        renumberCatSortInputs();
+        syncCatArrayFromDom();
+        persistCatOrderFromDom();
+      }
+      catDragRow = null;
+      clearCatDragUI();
+    });
+    tb.addEventListener("dragend", () => {
+      catDragRow = null;
+      clearCatDragUI();
+    });
+  }
+
+  /* ---- 菜品拖动排序（同一分类内拖动） ---- */
+  let dishDragRow = null;
+  function dishRowCategoryId(tr) {
+    const d = dishes.find((x) => x.id === tr.getAttribute("data-dish-id"));
+    return d ? d.category_id : "";
+  }
+  function clearDishDropMarks() {
+    const tb = $("#dishRows");
+    if (tb) Array.prototype.forEach.call(tb.querySelectorAll("tr"), (tr) => tr.classList.remove("drop-before", "drop-after"));
+  }
+  function clearDishDragUI() {
+    clearDishDropMarks();
+    const tb = $("#dishRows");
+    if (tb) Array.prototype.forEach.call(tb.querySelectorAll("tr"), (tr) => tr.classList.remove("dragging"));
+  }
+  async function commitDishOrderFromDom(catId) {
+    if (!client) return;
+    const tb = $("#dishRows");
+    const byId = {};
+    dishes.forEach((d) => { byId[d.id] = d; });
+    const ordered = [];
+    if (tb) {
+      Array.prototype.forEach.call(tb.querySelectorAll("tr[data-dish-id]"), (tr) => {
+        const d = byId[tr.getAttribute("data-dish-id")];
+        if (d && d.category_id === catId) ordered.push(d);
+      });
+    }
+    try {
+      await renumberCategory(catId, ordered);
+      toast("顺序已更新 ✅");
+      await refresh();
+    } catch (e) {
+      toast(errMsg(e), "err");
+      await refresh();
+    }
+  }
+  function bindDishDrag() {
+    const tb = $("#dishRows");
+    if (!tb) return;
+    tb.addEventListener("dragstart", (e) => {
+      const tr = e.target.closest("tr");
+      if (!tr || !tr.getAttribute("data-dish-id") || isEditableTarget(e.target) || e.target.closest("button")) {
+        e.preventDefault();
+        return;
+      }
+      dishDragRow = tr;
+      tr.classList.add("dragging");
+      try {
+        e.dataTransfer.effectAllowed = "move";
+        e.dataTransfer.setData("text/plain", tr.getAttribute("data-dish-id") || "");
+      } catch (err) { /* 某些浏览器限制 setData */ }
+    });
+    tb.addEventListener("dragover", (e) => {
+      if (!dishDragRow) return;
+      const tr = e.target.closest("tr");
+      if (!tr || tr === dishDragRow || !tr.getAttribute("data-dish-id")) return;
+      if (dishRowCategoryId(tr) !== dishRowCategoryId(dishDragRow)) { clearDishDropMarks(); return; }
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
+      clearDishDropMarks();
+      const rect = tr.getBoundingClientRect();
+      tr.classList.add(e.clientY > rect.top + rect.height / 2 ? "drop-after" : "drop-before");
+    });
+    tb.addEventListener("drop", async (e) => {
+      if (!dishDragRow) return;
+      e.preventDefault();
+      const tr = e.target.closest("tr");
+      const catId = dishRowCategoryId(dishDragRow);
+      if (tr && tr !== dishDragRow && tr.getAttribute("data-dish-id") && dishRowCategoryId(tr) === catId) {
+        const rect = tr.getBoundingClientRect();
+        tb.insertBefore(dishDragRow, e.clientY > rect.top + rect.height / 2 ? tr.nextSibling : tr);
+        await commitDishOrderFromDom(catId);
+      }
+      dishDragRow = null;
+      clearDishDragUI();
+    });
+    tb.addEventListener("dragend", () => {
+      dishDragRow = null;
+      clearDishDragUI();
+    });
+  }
   /* ---------------- 店铺设置 ---------------- */
   function renderSettingsForm() {
     $("#set_store_name").value = settingsMap.store_name || "";
@@ -578,6 +774,7 @@
       if (btn.classList.contains("save-cat")) saveCat(row);
       else if (btn.classList.contains("del-cat")) deleteCat(row);
       else if (btn.classList.contains("cancel-cat")) renderCats();
+      else if (btn.classList.contains("cat-mv")) moveCatRow(btn);
     });
 
     // 新增分类
@@ -614,6 +811,16 @@
       openDishModal(null);
     });
 
+    // 编辑弹窗内直接新增另一道（不关闭弹窗）
+    $("#dishModalNew").addEventListener("click", () => {
+      if (!cats.length) { toast("请先新增一个分类", "err"); return; }
+      openDishModal(null, $("#dishCategory").value);
+    });
+
+    // 拖动排序绑定
+    bindCatDrag();
+    bindDishDrag();
+
     // 排序数字输入：修改后自动保存
     $("#dishRows").addEventListener("change", (e) => {
       const inp = e.target.closest(".sort-inline");
@@ -633,6 +840,23 @@
     $("#dishForm").addEventListener("keydown", (e) => {
       // 输入框里按回车不要提交/关闭；多行备注(文本域)保留回车换行
       if (e.key === "Enter" && e.target.tagName !== "TEXTAREA") e.preventDefault();
+    });
+
+    // 完成菜品后：按 Esc / 空格 关闭编辑弹窗（在输入框里打空格不会触发）
+    document.addEventListener("keydown", (e) => {
+      const modal = $("#dishModal");
+      if (!modal.classList.contains("show")) return;
+      if (e.key === "Escape") {
+        e.preventDefault();
+        closeDishModal();
+        return;
+      }
+      if (e.key === " " || e.code === "Space") {
+        const t = e.target;
+        if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || t.isContentEditable === true)) return;
+        e.preventDefault();
+        closeDishModal();
+      }
     });
 
     // 图片上传：点击选择 / 拖拽 / 网址预览

@@ -208,14 +208,6 @@ footer .container { padding: 26px 18px 20px; }
 .hidden { display: none !important; }
 
 /* ================= 中式细节装饰（含蓄不突兀） ================= */
-.lattice-strip {
-  height: 10px;
-  background:
-    repeating-linear-gradient(90deg,
-      #8f1a20 0px, #8f1a20 16px, #e8b84b 16px, #e8b84b 19px,
-      #8f1a20 19px, #8f1a20 36px, #f6e3b4 36px, #f6e3b4 39px,
-      #8f1a20 39px, #8f1a20 56px);
-}
 .hero { padding: 54px 18px 104px; }
 .hero-frame {
   position: relative; z-index: 1; max-width: 800px; margin: 0 auto;

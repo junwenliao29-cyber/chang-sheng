@@ -83,10 +83,11 @@
             <table class="tbl">
               <thead>
                 <tr>
-                  <th style="width:34%;">西语名 (es)</th>
-                  <th style="width:30%;">中文名 (zh，可选)</th>
-                  <th style="width:16%;">排序</th>
-                  <th style="width:20%;">操作</th>
+                  <th style="width:26px;" title="按住把手拖动排序"></th>
+                  <th style="width:30%;">西语名 (es)</th>
+                  <th style="width:26%;">中文名 (zh，可选)</th>
+                  <th style="width:12%;">排序</th>
+                  <th style="width:24%;">操作</th>
                 </tr>
               </thead>
               <tbody id="catRows"></tbody>
@@ -114,6 +115,7 @@
             <table class="tbl">
               <thead>
                 <tr>
+                  <th style="width:26px;" title="按住把手拖动排序"></th>
                   <th>西语名</th>
                   <th>中文名</th>
                   <th>分类</th>
@@ -293,6 +295,8 @@
         </form>
       </div>
       <div class="modal-foot">
+        <span class="modal-tip small muted">保存后：按 <b>Esc</b> 或 <b>空格</b> 关闭 · 可直接点“＋ 新增另一道”继续录入</span>
+        <button type="button" class="btn btn-ghost" id="dishModalNew">＋ 新增另一道</button>
         <button type="button" class="btn btn-ghost" id="dishModalCancel">取消</button>
         <button type="button" class="btn btn-primary" id="dishModalSave">💾 保存</button>
       </div>
