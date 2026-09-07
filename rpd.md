@@ -116,6 +116,7 @@ supabase/migration-ordernum.sql 取餐号（保留备用）
 2. 先读 `rpd.md` + `README.md`，再看相关源码。
 3. 按老板本次需求修改代码。
 4. 自测：JS 改完至少跑 `node --check 文件名.js`；本地起服务器（`python -m http.server 8000` 或 Live Server）肉眼过一遍顾客站和后台。
+4.1 **每次改 JS/CSS 后，把 `admin.html` / `index.html` 里的 `?v=` 数字 +1**（现在为 v=2，下次 v=3…），避免 GitHub Pages 的 10 分钟浏览器缓存让老板看不到新改动（出现过“改完没反应”其实是缓存旧 JS）。
 5. 提交并推送：`git add . && git commit -m "改了什么" && git push`（GitHub Pages 约 1 分钟自动上线）。
 6. 把网址发给老板，提醒强刷（`Ctrl+F5` / `Cmd+Shift+R`）验收；有 bug 继续修。
 7. 每次小步改动、及时推送，不要攒一堆；老板随时要能预览。
