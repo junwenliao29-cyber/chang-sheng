@@ -218,3 +218,15 @@ textarea { resize: vertical; min-height: 72px; }
 .tbl tr.drop-after td { box-shadow: inset 0 -2px 0 var(--red); }
 .modal-foot { flex-wrap: wrap; }
 .modal-tip { margin-right: auto; align-self: center; }
+
+/* ================= 后台 · 手机端适配 ================= */
+@media (max-width: 700px) {
+  /* 菜品管理工具条：搜索框换行占满 */
+  #dishSearch { width: 100% !important; min-width: 0 !important; }
+  /* 编辑弹窗底部：提示占一行，按钮自动换行、可点区域够大 */
+  .modal-foot .modal-tip { width: 100%; margin-right: 0; }
+  .modal-foot .btn { flex: 1 1 auto; padding: 10px 8px; }
+  /* 表格保持横向滚动，避免挤压 */
+  .card { padding: 14px 12px; }
+  .tbl .row-actions .btn-sm { padding: 6px 8px; }
+}

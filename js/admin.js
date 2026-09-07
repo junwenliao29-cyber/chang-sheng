@@ -14,6 +14,7 @@
   let settingsMap = {};
 
   let editingDishId = null; // 正在编辑的菜品 id（null = 新增）
+  let editingSnapshot = null; // 打开弹窗时该菜品的原始值，用于“未保存”提醒
   let toastTimer = null;
 
   /* ---------------- 提示消息 ---------------- */
@@ -295,13 +296,27 @@
       cats.map((c) => '<option value="' + U.escapeHTML(c.id) + '">' + U.escapeHTML(c.name_es) + "</option>").join("");
     sel.value = cats.some((c) => c.id === current) ? current : "";
   }
-  function renderDishes() {
+  // 当前列表上显示的菜品（受“分类筛选 + 快速查找框”影响）——也作为编辑弹窗“上/下一个”的顺序
+  function visibleDishes() {
     const filter = $("#dishFilter").value;
-    const list = filter ? dishes.filter((d) => d.category_id === filter) : dishes;
+    const q = String(($("#dishSearch") && $("#dishSearch").value) || "").trim().toLowerCase();
+    return dishes.filter((d) => {
+      if (filter && d.category_id !== filter) return false;
+      if (q) {
+        const es = String(d.name_es || "").toLowerCase();
+        const zh = String(d.name_zh || "").toLowerCase();
+        if (es.indexOf(q) < 0 && zh.indexOf(q) < 0) return false;
+      }
+      return true;
+    });
+  }
+  function renderDishes() {
+    const list = visibleDishes();
     const tbody = $("#dishRows");
     if (!list.length) {
       tbody.innerHTML = "";
       $("#dishEmpty").style.display = "block";
+      updateDishNavButtons();
       return;
     }
     $("#dishEmpty").style.display = "none";
@@ -328,6 +343,7 @@
         );
       })
       .join("");
+    updateDishNavButtons();
   }
 
   /* ---------------- 菜品弹窗 ---------------- */
@@ -380,8 +396,61 @@
     } catch (e) { toast(errMsg(e), "err"); }
   }
 
+  /* ---------------- 编辑弹窗：上/下一个菜品 + 未保存提醒 ---------------- */
+  function updateDishNavButtons() {
+    const prev = $("#dishModalPrev");
+    const next = $("#dishModalNext");
+    if (!prev || !next) return;
+    const view = visibleDishes();
+    const idx = editingDishId ? view.findIndex((d) => d.id === editingDishId) : -1;
+    prev.disabled = idx <= 0;
+    next.disabled = idx < 0 || idx >= view.length - 1;
+  }
+  function currentFormSnapshot() {
+    return {
+      category_id: $("#dishCategory").value,
+      name_es: $("#dishNameEs").value.trim(),
+      name_zh: $("#dishNameZh").value.trim(),
+      price_clp: U.toInt($("#dishPrice").value),
+      sort_order: U.toInt($("#dishSort").value),
+      description: $("#dishDesc").value.trim(),
+      image_url: $("#dishImage").value.trim(),
+      available: $("#dishAvailable").checked,
+    };
+  }
+  function dishObjectSnapshot(dish) {
+    return {
+      category_id: dish ? dish.category_id : null,
+      name_es: dish ? dish.name_es || "" : "",
+      name_zh: dish ? dish.name_zh || "" : "",
+      price_clp: dish ? Number(dish.price_clp) || 0 : 0,
+      sort_order: dish ? Number(dish.sort_order) || 0 : 0,
+      description: dish ? dish.description || "" : "",
+      image_url: dish ? dish.image_url || "" : "",
+      available: dish ? dish.available !== false : true,
+    };
+  }
+  function formDirty() {
+    if (!editingSnapshot) return false;
+    const a = editingSnapshot, b = currentFormSnapshot();
+    return a.category_id !== b.category_id || a.name_es !== b.name_es ||
+      a.name_zh !== b.name_zh || a.price_clp !== b.price_clp ||
+      a.sort_order !== b.sort_order || a.description !== b.description ||
+      a.image_url !== b.image_url || a.available !== b.available;
+  }
+  function dishNav(dir) {
+    if (!editingDishId) return;
+    const view = visibleDishes();
+    const idx = view.findIndex((d) => d.id === editingDishId);
+    if (idx < 0) return;
+    const target = view[idx + dir];
+    if (!target) return;
+    if (formDirty() && !confirm("当前修改还未保存，确定放弃并切换到" + (dir < 0 ? "上一个" : "下一个") + "菜品？")) return;
+    openDishModal(target);
+  }
   function openDishModal(dish, preferredCatId) {
     editingDishId = dish ? dish.id : null;
+    editingSnapshot = dish ? dishObjectSnapshot(dish) : null;
     $("#dishModalTitle").textContent = dish ? "编辑菜品" : "新增菜品";
     // 分类下拉
     const catSel = $("#dishCategory");
@@ -404,11 +473,14 @@
     $("#dishAvailable").checked = dish ? dish.available !== false : true;
 
     $("#dishModal").classList.add("show");
+    updateDishNavButtons();
     setTimeout(() => $("#dishNameEs").focus(), 50);
   }
   function closeDishModal() {
     $("#dishModal").classList.remove("show");
     editingDishId = null;
+    editingSnapshot = null;
+    updateDishNavButtons();
     showPreview("");
     setImgStatus("");
   }
@@ -447,6 +519,8 @@
         toast("菜品已添加 ✅（可继续录入下一道，或按 Esc/空格 关闭）");
       }
       await refresh();
+      editingSnapshot = currentFormSnapshot();
+      updateDishNavButtons();
     } catch (e) { toast(errMsg(e), "err"); }
   }
   async function deleteDish(id) {
@@ -787,8 +861,10 @@
       tr.querySelector(".cat-es").focus();
     });
 
-    // 菜品筛选
+    // 菜品筛选 + 快速查找
     $("#dishFilter").addEventListener("change", renderDishes);
+    const dishSearchEl = $("#dishSearch");
+    if (dishSearchEl) dishSearchEl.addEventListener("input", renderDishes);
 
     // 菜品行操作（委托）
     $("#dishRows").addEventListener("click", (e) => {
@@ -836,16 +912,29 @@
     $("#dishModalClose").addEventListener("click", closeDishModal);
     $("#dishModalCancel").addEventListener("click", closeDishModal);
     $("#dishModalSave").addEventListener("click", saveDish);
+    $("#dishModalPrev").addEventListener("click", () => dishNav(-1));
+    $("#dishModalNext").addEventListener("click", () => dishNav(1));
     $("#dishForm").addEventListener("submit", (e) => { e.preventDefault(); });
     $("#dishForm").addEventListener("keydown", (e) => {
-      // 输入框里按回车不要提交/关闭；多行备注(文本域)保留回车换行
-      if (e.key === "Enter" && e.target.tagName !== "TEXTAREA") e.preventDefault();
+      const t = e.target;
+      if (e.key !== "Enter") return;
+      // 备注框：回车=换行；Ctrl/Cmd+回车=保存
+      if (t && t.tagName === "TEXTAREA") {
+        if (e.ctrlKey || e.metaKey) { e.preventDefault(); saveDish(); }
+        return;
+      }
+      // 下拉框/按钮：回车用于选中或触发，避免误保存
+      if (t && (t.tagName === "SELECT" || t.tagName === "BUTTON")) return;
+      e.preventDefault();
+      saveDish();
     });
 
     // 完成菜品后：按 Esc / 空格 关闭编辑弹窗（在输入框里打空格不会触发）
     document.addEventListener("keydown", (e) => {
       const modal = $("#dishModal");
       if (!modal.classList.contains("show")) return;
+      if (e.altKey && e.key === "ArrowUp") { e.preventDefault(); dishNav(-1); return; }
+      if (e.altKey && e.key === "ArrowDown") { e.preventDefault(); dishNav(1); return; }
       if (e.key === "Escape") {
         e.preventDefault();
         closeDishModal();

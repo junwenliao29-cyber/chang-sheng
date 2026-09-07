@@ -104,7 +104,8 @@
               <h2>🍽️ 菜品管理</h2>
               <p class="hint">价格单位为智利比索 CLP，填整数（如 4500 = $4.500）。</p>
             </div>
-            <div style="display:flex;gap:8px;align-items:center;">
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+              <input id="dishSearch" type="search" placeholder="🔍 快速查找（西语/中文名）…" aria-label="快速查找菜品" style="padding:8px 10px;border:1px solid var(--line);border-radius:9px;font-size:13.5px;width:200px;min-width:150px;" />
               <select id="dishFilter" style="padding:8px 10px;border:1px solid var(--line);border-radius:9px;font-size:13.5px;">
                 <option value="">全部分类</option>
               </select>
@@ -222,6 +223,8 @@
           <h2>📖 使用说明</h2>
           <ol class="setup-steps">
             <li><b>改菜单：</b>切到“菜单管理”，可以新增/删除分类和菜品、改西语名/中文名/价格/描述/图片、勾选“在售”来下架某道菜（顾客端显示 Agotado）。</li>
+            <li><b>编辑菜品快捷键：</b>编辑弹窗里按 <b>回车</b> = 快速保存；<b>备注框</b>按 <b>Ctrl+回车</b> 保存；点“‹ 上一个 / 下一个 ›”（或 <b>Alt+↑/↓</b>）快速切换菜品；Esc/空格 关闭。</li>
+            <li><b>快速查找：</b>“菜品管理”右上角搜索框可按西语名或中文名实时过滤。</li>
             <li><b>改店铺信息：</b>切到“店铺设置”，修改店名、WhatsApp 号码、地址、营业时间和顶部公告，点保存。</li>
             <li><b>改完立刻生效：</b>所有修改保存后，顾客刷新网站就能看到最新内容，无需重新发布代码。</li>
             <li><b>菜品的图片：</b>在“编辑菜品”里粘贴图片网址（https://…）即可显示照片；留空则显示中文占位字。</li>
@@ -295,7 +298,9 @@
         </form>
       </div>
       <div class="modal-foot">
-        <span class="modal-tip small muted">保存后：按 <b>Esc</b> 或 <b>空格</b> 关闭 · 可直接点“＋ 新增另一道”继续录入</span>
+        <span class="modal-tip small muted">回车=保存 · Ctrl+回车(备注)=保存 · Esc/空格=关闭 · Alt+↑/↓=上/下一道</span>
+        <button type="button" class="btn btn-ghost" id="dishModalPrev" title="上一个菜品（Alt+↑）">‹ 上一个</button>
+        <button type="button" class="btn btn-ghost" id="dishModalNext" title="下一个菜品（Alt+↓）">下一个 ›</button>
         <button type="button" class="btn btn-ghost" id="dishModalNew">＋ 新增另一道</button>
         <button type="button" class="btn btn-ghost" id="dishModalCancel">取消</button>
         <button type="button" class="btn btn-primary" id="dishModalSave">💾 保存</button>
