@@ -213,7 +213,8 @@
   function renderCart() {
     const count = cartCount();
     $("#cartCount").textContent = count;
-    $("#cartFab").style.display = count ? "" : "none";
+    // 购物车按钮常驻（有可点菜品就显示，空车也显示，方便电脑/手机随时入口）
+    $("#cartFab").style.display = menu.dishes.some((d) => d.available !== false) ? "" : "none";
 
     const linesEl = $("#cartLines");
     const emptyEl = $("#cartEmpty");
