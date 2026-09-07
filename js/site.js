@@ -178,6 +178,88 @@
     root.innerHTML = html;
   }
 
+  /* ---------------- 菜品搜索 ---------------- */
+  function normalizeText(s) {
+    return String(s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  }
+  let searchTimer = null;
+  function dishMatches(d, q) {
+    return normalizeText(d.name_es).indexOf(q) >= 0 || normalizeText(d.name_zh).indexOf(q) >= 0;
+  }
+  function applyDishSearch() {
+    const inp = $("#siteSearch");
+    const clearBtn = $("#searchClearBtn");
+    if (!inp) return;
+    const q = normalizeText(inp.value).trim();
+    const root = $("#menuRoot");
+    const nav = $("#catNav");
+    if (!q) {
+      if (clearBtn) clearBtn.classList.add("hidden");
+      renderMenu();
+      return;
+    }
+    if (clearBtn) clearBtn.classList.remove("hidden");
+    let navHtml = "";
+    let html = "";
+    let any = false;
+    menu.categories.forEach((cat) => {
+      const hits = menu.dishes.filter((d) => d.category_id === cat.id && dishMatches(d, q));
+      if (!hits.length) return;
+      any = true;
+      navHtml += '<a href="#cat-' + U.escapeHTML(cat.id) + '">' + U.escapeHTML(cat.name_es) +
+        (cat.name_zh ? '<span class="zh">' + U.escapeHTML(cat.name_zh) + "</span>" : "") + "</a>";
+      html +=
+        '<section class="menu-section" id="cat-' + U.escapeHTML(cat.id) + '">' +
+        '<div class="cat-head"><h2>' + U.escapeHTML(cat.name_es) + "</h2>" +
+        (cat.name_zh ? '<span class="zh">' + U.escapeHTML(cat.name_zh) + "</span>" : "") + "</div>" +
+        '<div class="dish-grid">' + hits.map(dishCardHTML).join("") + "</div></section>";
+    });
+    nav.innerHTML = navHtml;
+    if (!any) {
+      html = '<div class="no-results"><div class="big">🔍</div><b>Sin resultados</b>' +
+        '<p class="small muted">No encontramos “' + U.escapeHTML(inp.value.trim()) + '”. Prueba con otro nombre o en chino.</p></div>';
+    }
+    root.innerHTML = html;
+  }
+  function scheduleSearch() {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(applyDishSearch, 120);
+  }
+
+  /* ---------------- 下单方式引导（今日不再提醒） ---------------- */
+  const GUIDE_KEY = "cs_order_guide_off";
+  function guideTodayKey() {
+    const d = new Date();
+    const p = (n) => (n < 10 ? "0" + n : "" + n);
+    return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate());
+  }
+  function maybeShowGuide() {
+    try { if (localStorage.getItem(GUIDE_KEY) === guideTodayKey()) return; } catch (e) {}
+    const g = $("#orderGuide");
+    if (!g) return;
+    setTimeout(() => {
+      g.classList.remove("hidden");
+      document.body.style.overflow = "hidden";
+    }, 700);
+  }
+  function hideOrderGuide(rememberToday) {
+    const g = $("#orderGuide");
+    if (g) g.classList.add("hidden");
+    document.body.style.overflow = "";
+    if (rememberToday) {
+      try { localStorage.setItem(GUIDE_KEY, guideTodayKey()); } catch (e) {}
+    }
+  }
+  function bindGuide() {
+    const g = $("#orderGuide");
+    if (!g) return;
+    const ok = $("#guideOkBtn");
+    const close = $("#guideClose");
+    const noToday = $("#guideNoToday");
+    if (ok) ok.addEventListener("click", () => hideOrderGuide(noToday ? !!noToday.checked : false));
+    if (close) close.addEventListener("click", () => hideOrderGuide(false));
+    g.addEventListener("click", (e) => { if (e.target === g) hideOrderGuide(false); });
+  }
   function dishPhotoHTML(d) {
     if (d.image_url) {
       return '<img src="' + U.escapeHTML(d.image_url) + '" alt="' + U.escapeHTML(d.name_es) + '" loading="lazy" onerror="this.remove()" />';
@@ -522,8 +604,22 @@
     $("#cartClose").addEventListener("click", closeCart);
     $("#overlay").addEventListener("click", closeCart);
     document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape") closeCart();
+      if (e.key !== "Escape") return;
+      const guide = $("#orderGuide");
+      if (guide && !guide.classList.contains("hidden")) { hideOrderGuide(false); return; }
+      closeCart();
     });
+
+    // 菜品搜索
+    const searchInp = $("#siteSearch");
+    if (searchInp) searchInp.addEventListener("input", scheduleSearch);
+    const clearBtn = $("#searchClearBtn");
+    if (clearBtn) clearBtn.addEventListener("click", () => {
+      if (searchInp) { searchInp.value = ""; applyDishSearch(); searchInp.focus(); }
+    });
+
+    // 下单引导
+    bindGuide();
 
     // 加菜（事件委托）
     $("#menuRoot").addEventListener("click", function (e) {
@@ -567,6 +663,7 @@
       if (loading) loading.classList.add("hidden");
     }
     renderCart();
+    maybeShowGuide();
   }
 
   document.addEventListener("DOMContentLoaded", init);

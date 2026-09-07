@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>昌盛 CHANG SHENG · Comida China</title>
   <meta name="description" content="昌盛 CHANG SHENG — Comida china auténtica. Pide por WhatsApp y retira o recibe en tu casa." />
-  <link rel="stylesheet" href="css/site.css?v=2" />
+  <link rel="stylesheet" href="css/site.css?v=3" />
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🥢</text></svg>" />
 </head>
 <body>
@@ -65,6 +65,15 @@
   <div class="catnav-wrap">
     <div class="container">
       <nav id="catNav" class="catnav"></nav>
+    </div>
+  </div>
+
+  <!-- 菜品搜索 -->
+  <div class="container search-wrap">
+    <div class="search-box">
+      <span class="search-ic" aria-hidden="true">🔍</span>
+      <input id="siteSearch" type="search" placeholder="Buscar plato por nombre…" aria-label="Buscar plato" autocomplete="off" enterkeyhint="search" />
+      <button type="button" id="searchClearBtn" class="search-clear hidden" aria-label="Limpiar búsqueda">✕</button>
     </div>
   </div>
 
@@ -215,12 +224,46 @@
     </div>
   </aside>
 
+  <!-- 下单方式引导（可选：今日不再提醒） -->
+  <div id="orderGuide" class="guide-overlay hidden" role="dialog" aria-modal="true" aria-label="Cómo hacer tu pedido">
+    <div class="guide-card">
+      <button type="button" id="guideClose" class="guide-x" aria-label="Cerrar">✕</button>
+      <div class="guide-head">
+        <span class="guide-badge" aria-hidden="true">🥢</span>
+        <div class="guide-title">
+          <h2>¿Cómo hacer tu pedido?</h2>
+          <p>Retiro en local · Despacho a domicilio</p>
+        </div>
+      </div>
+      <div class="guide-body">
+        <div class="guide-opt">
+          <span class="guide-ic" aria-hidden="true">🛍️</span>
+          <div class="guide-opt-txt">
+            <b>Retiro en local</b>
+            <p>Agrega tus platos al carrito y elige <b>Retiro</b>. Verás el total y tu Nº de pedido para retirar cuando esté listo.</p>
+          </div>
+        </div>
+        <div class="guide-opt">
+          <span class="guide-ic" aria-hidden="true">🛵</span>
+          <div class="guide-opt-txt">
+            <b>Despacho a domicilio</b>
+            <p>Elige <b>Despacho</b>, escribe tu dirección y comparte tu ubicación. El total te lo confirmamos por WhatsApp.</p>
+          </div>
+        </div>
+        <p class="guide-step">① + Agregar → ② carrito → ③ enviar por WhatsApp</p>
+      </div>
+      <div class="guide-foot">
+        <label class="guide-no-today"><input type="checkbox" id="guideNoToday" /><span>No volver a mostrar hoy</span></label>
+        <button type="button" class="btn btn-gold btn-block" id="guideOkBtn">Entendido</button>
+      </div>
+    </div>
+  </div>
   <!-- 脚本：顺序很重要 -->
-  <script src="js/config.js?v=2"></script>
-  <script src="js/supabase.js?v=2"></script>
-  <script src="js/utils.js?v=2"></script>
-  <script src="js/demo-data.js?v=2"></script>
-  <script src="js/data.js?v=2"></script>
-  <script src="js/site.js?v=2"></script>
+  <script src="js/config.js?v=3"></script>
+  <script src="js/supabase.js?v=3"></script>
+  <script src="js/utils.js?v=3"></script>
+  <script src="js/demo-data.js?v=3"></script>
+  <script src="js/data.js?v=3"></script>
+  <script src="js/site.js?v=3"></script>
 </body>
 </html>

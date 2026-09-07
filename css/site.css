@@ -386,3 +386,92 @@ footer .container { padding: 26px 18px 20px; }
 .dish-card .add-btn { background: linear-gradient(180deg, #fffef8, #fff4e2); }
 .dish-card .add-btn:hover { background: var(--red); }
 .footer-top .zh { color: #efc75e; text-shadow: 0 0 18px rgba(239,199,94,.25); }
+
+/* ================ 菜品搜索 ================ */
+.search-wrap { margin: 16px auto -4px; }
+.search-box {
+  display: flex; align-items: center; gap: 4px;
+  background: var(--paper);
+  border: 1.5px solid var(--line); border-radius: 999px;
+  box-shadow: 0 4px 14px rgba(120,60,20,.06);
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+.search-box:focus-within { border-color: var(--red); box-shadow: 0 0 0 3px rgba(200,16,46,.12); }
+.search-ic { padding-left: 14px; font-size: 15px; opacity: .75; }
+#siteSearch {
+  flex: 1; min-width: 0; border: none; background: transparent; outline: none;
+  padding: 11px 6px 11px 6px; font-size: 15px; font-family: inherit; color: var(--ink);
+}
+#siteSearch::-webkit-search-cancel-button { -webkit-appearance: none; appearance: none; }
+#siteSearch::placeholder { color: #a99a80; }
+.search-clear {
+  flex: none; border: none; background: #f1e7d2; color: #7c6b50;
+  width: 26px; height: 26px; border-radius: 50%; margin-right: 9px;
+  cursor: pointer; font-size: 13px; line-height: 1;
+}
+.search-clear:hover { background: var(--red); color: #fff; }
+.no-results { text-align: center; color: var(--muted); padding: 46px 16px; }
+.no-results .big { font-size: 34px; margin-bottom: 10px; }
+.no-results b { color: var(--red-dark); }
+
+/* ================ 下单引导弹窗（中国风配色） ================ */
+.guide-overlay {
+  position: fixed; inset: 0; z-index: 130;
+  display: flex; align-items: center; justify-content: center; padding: 18px;
+  background: rgba(60, 22, 8, .55);
+  backdrop-filter: blur(2px);
+}
+.guide-overlay.hidden { display: none; }
+.guide-card {
+  position: relative; background: var(--paper);
+  width: min(440px, 100%); border-radius: 16px; overflow: hidden;
+  border: 1px solid rgba(201,162,39,.55);
+  box-shadow: 0 26px 70px rgba(60,15,5,.4), inset 0 0 0 3px rgba(251,244,230,.6);
+  max-height: calc(100vh - 40px); overflow-y: auto;
+}
+.guide-card::before {
+  content: ""; position: absolute; inset: 6px; border: 1px solid rgba(201,162,39,.35);
+  border-radius: 11px; pointer-events: none; z-index: 1;
+}
+.guide-x {
+  position: absolute; top: 10px; right: 10px; z-index: 3;
+  width: 32px; height: 32px; border-radius: 50%; border: none;
+  background: rgba(255,255,255,.18); color: #fff; font-size: 15px; cursor: pointer; line-height: 1;
+}
+.guide-x:hover { background: rgba(255,255,255,.32); }
+.guide-head {
+  display: flex; align-items: center; gap: 13px; padding: 18px 18px 15px;
+  background: linear-gradient(135deg, var(--red), var(--red-dark)); color: #fff;
+  border-bottom: 3px solid var(--gold);
+}
+.guide-badge {
+  flex: none; width: 48px; height: 48px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center; font-size: 24px;
+  background: rgba(255,255,255,.16); border: 1.5px solid rgba(255,255,255,.5);
+}
+.guide-title h2 { margin: 0; font-size: 19px; letter-spacing: .5px; }
+.guide-title p { margin: 3px 0 0; font-size: 12px; opacity: .9; letter-spacing: .6px; text-transform: uppercase; }
+.guide-body { padding: 16px 18px 6px; position: relative; z-index: 2; }
+.guide-opt {
+  display: flex; gap: 12px; align-items: flex-start;
+  background: #fffaf0; border: 1px solid #f0e0c2; border-radius: 12px;
+  padding: 12px; margin-bottom: 10px;
+}
+.guide-ic {
+  flex: none; width: 40px; height: 40px; border-radius: 50%;
+  background: linear-gradient(180deg, var(--gold-light), var(--gold));
+  color: #5a3c00; display: flex; align-items: center; justify-content: center; font-size: 19px;
+}
+.guide-opt-txt b { color: var(--red-dark); font-size: 14.5px; }
+.guide-opt-txt p { margin: 4px 0 0; color: var(--muted); font-size: 13px; line-height: 1.55; }
+.guide-opt-txt p b { color: var(--red); font-size: 13px; }
+.guide-step { text-align: center; color: #a5853a; font-size: 12.5px; margin: 2px 0 4px; letter-spacing: .3px; }
+.guide-foot {
+  padding: 6px 18px 18px; border-top: 1px dashed var(--line); margin-top: 8px;
+  position: relative; z-index: 2;
+}
+.guide-no-today {
+  display: flex; align-items: center; gap: 8px;
+  color: var(--muted); font-size: 13px; cursor: pointer; margin: 10px 0 14px;
+}
+.guide-no-today input { width: 17px; height: 17px; accent-color: var(--red); }

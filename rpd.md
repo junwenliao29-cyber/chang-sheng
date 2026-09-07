@@ -79,6 +79,8 @@ supabase/migration-ordernum.sql 取餐号（保留备用）
 - 右下角 **Carrito 购物车按钮常驻**（只要有可点菜品就显示，空车也显示 0，电脑/手机都有入口）；**抽屉可上下滚动**：自取显示单价/小计/总价；配送不显示价格
 - **自动取餐号**：自取下单由后台 `next_order_number` 自动发号（同一单改后重发沿用同一号）；配送则填姓名+地址+“用我的当前位置”
 - 下单后自动跳 WhatsApp 带订单明细（自取含金额与取餐号），购物车清空并显示感谢语
+- **菜品搜索**：菜单上方搜索框按西语/中文名实时过滤（可忽略大小写/重音）
+- **下单引导弹窗**：进入网站弹出“如何下单（Retiro 自取 / Despacho 配送）”说明，可勾选“No volver a mostrar hoy（今日不再提醒）”（localStorage 按天记录，勾选后当天不再弹出）
 - 公告栏（settings.announcement）
 - Contacto：地址/营业时间/WhatsApp/Google Maps 带路按钮（settings.map_link）
 - 访问统计：view 每次打开 1 条（同浏览器每天 1 次）；order 在确认下单后记 1 条并带金额（均 keepalive）
