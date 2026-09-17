@@ -14,6 +14,17 @@
     client = supabaseLib.createClient(cfg.supabaseUrl, cfg.supabaseAnonKey);
   }
 
+  function parseDineinOnly(raw) {
+    try { const a = JSON.parse(raw || "[]"); return Array.isArray(a) ? a : []; } catch (e) { return []; }
+  }
+  function filterDineinOnly(categories, dishes, onlyIds) {
+    const visibleCats = (categories || []).filter(function (c) { return onlyIds.indexOf(c.id) < 0; });
+    const ids = {};
+    visibleCats.forEach(function (c) { ids[c.id] = true; });
+    const visibleDishes = (dishes || []).filter(function (d) { return ids[d.category_id]; });
+    return { categories: visibleCats, dishes: visibleDishes };
+  }
+
   async function loadMenuFromSupabase() {
     const [{ data: settingsRows, error: errS }, { data: categories, error: errC }, { data: dishes, error: errD }] =
       await Promise.all([
@@ -27,16 +38,17 @@
     }
     const settings = {};
     (settingsRows || []).forEach(function (row) { settings[row.key] = row.value; });
-    return { settings: settings, categories: categories || [], dishes: dishes || [] };
+    const onlyIds = parseDineinOnly(settings.dinein_only_categories);
+    const vis = filterDineinOnly(categories, dishes, onlyIds);
+    return { settings: settings, categories: vis.categories, dishes: vis.dishes };
   }
 
   function loadDemoMenu() {
     const demo = window.DEMO_DATA || { settings: {}, categories: [], dishes: [] };
-    return {
-      settings: Object.assign({}, demo.settings),
-      categories: (demo.categories || []).slice(),
-      dishes: (demo.dishes || []).slice(),
-    };
+    const settings = Object.assign({}, demo.settings);
+    const onlyIds = parseDineinOnly(settings.dinein_only_categories);
+    const vis = filterDineinOnly(demo.categories, demo.dishes, onlyIds);
+    return { settings: settings, categories: vis.categories, dishes: vis.dishes };
   }
 
   window.Data = {
