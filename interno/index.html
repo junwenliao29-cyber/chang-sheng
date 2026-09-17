@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex,nofollow" />
+  <title>昌盛 CHANG SHENG · 内部点单 (Uso interno)</title>
+  <meta name="description" content="昌盛 CHANG SHENG — Pide desde tu mesa. Menú completo, precios y pedido directo por WhatsApp." />
+  <link rel="stylesheet" href="css/site.css?v=5" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🥢</text></svg>" />
+</head>
+<body>
+
+  <!-- 演示模式提示（连接 Supabase 后会自动隐藏） -->
+  <div id="demoBar" class="demo-bar hidden">
+    Modo demostración: estás viendo el menú de ejemplo. Para publicar tu menú real,
+    <a href="admin.html">configura Supabase aquí</a>.
+  </div>
+
+  <!-- 顶部导航 -->
+  <header class="topbar">
+    <div class="container">
+      <a class="brand" href="#">
+        <span class="brand-mark">昌</span>
+        <span class="brand-name">
+          <b>CHANG SHENG</b>
+          <span>昌盛 · comida china</span>
+        </span>
+      </a>
+      <nav class="topnav">
+        <a class="wa-btn" id="topWaBtn" href="https://wa.me/56954663415" target="_blank" rel="noopener">
+          <svg viewBox="0 0 32 32"><path d="M16 .8C7.6.8.8 7.6.8 16c0 2.7.7 5.3 2 7.6L.8 31.2l7.8-2c2.2 1.2 4.7 1.9 7.4 1.9 8.4 0 15.2-6.8 15.2-15.2S24.4.8 16 .8zm0 27.8c-2.4 0-4.7-.6-6.7-1.8l-.5-.3-4.6 1.2 1.2-4.5-.3-.5c-1.2-2-1.9-4.4-1.9-6.8C3.2 9 9 3.2 16 3.2S28.8 9 28.8 16 23 28.6 16 28.6zm6.9-9.1c-.4-.2-2.2-1.1-2.5-1.2-.3-.1-.6-.2-.8.2-.3.4-1 1.2-1.2 1.5-.2.3-.4.3-.8.1-.4-.2-1.6-.6-3.1-1.9-1.1-1-1.9-2.3-2.1-2.6-.2-.4 0-.6.2-.8l.6-.7c.2-.2.3-.4.4-.6.1-.2.1-.4 0-.6-.1-.2-.8-2-.1-3.1.1-.2.2-.1.3-.1h.9c.3 0 .5-.1.8.1.2.3 1.2 1.4 1.2 1.4s.3.5.7.5.5-.6.5-.6.3-.8.4-1c.1-.2.2-.3.4-.2.2.1 1 .5 1 .5s.8.4 1.2.5c.1.1.1.2.1.3 0 .1-.2 1.2-.4 2.2-.1.5-.7.9-1.2 1.3-.3.3-.3.5 0 .8.4.6 1.9 2.8 2.1 3 .2.2.2.4.1.5-.1.1-.4.3-.6.4-.2.2-.4.3-.5.4-.2.1-.2.2 0 .4.2.2 1.2 1.5 1.4 1.7.2.2.4.3.6.4.1 0 .2.1.3.1.1 0 .1-.1.2-.1.1-.2.7-1.7.8-1.9.1-.2.2-.2.4-.1.2.1 1.4.7 1.6.8.2.1.4.2.5.3.1.2.1.7-.1 1.3-.2.6-1.2 1.2-1.7 1.3-.4.2-1 .3-1.7.1z"/></svg>
+          WhatsApp
+        </a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- 公告栏 -->
+  <div id="announcement" class="announcement hidden"></div>
+
+  <!-- 内部点单工具条：顶部直接填桌号 -->
+  <div class="internal-bar">
+    <div class="container internal-bar-inner">
+      <span class="ib-title">🍽️ 内部点单 <small>Uso interno</small></span>
+      <label class="ib-table" for="custTable">Mesa
+        <input id="custTable" type="number" min="1" step="1" inputmode="numeric" placeholder="Nº" />
+      </label>
+      <button type="button" class="ib-new" id="newOrderBtn">＋ 新单</button>
+    </div>
+  </div>
+
+  <!-- 分类导航 -->
+  <div class="catnav-wrap">
+    <div class="container">
+      <nav id="catNav" class="catnav"></nav>
+    </div>
+  </div>
+
+  <!-- 菜品搜索 -->
+  <div class="container search-wrap">
+    <div class="search-box">
+      <span class="search-ic" aria-hidden="true">🔍</span>
+      <input id="siteSearch" type="search" placeholder="Buscar plato por nombre…" aria-label="Buscar plato" autocomplete="off" enterkeyhint="search" />
+      <button type="button" id="searchClearBtn" class="search-clear hidden" aria-label="Limpiar búsqueda">✕</button>
+    </div>
+  </div>
+
+  <!-- 菜单 -->
+  <main class="container" id="menu">
+    <div id="loading" class="loading">
+      <div class="spinner"></div>
+      Cargando menú…
+    </div>
+    <div id="errorBox" class="error-box hidden">
+      <p>😥 No se pudo cargar el menú en este momento.</p>
+      <p id="errorMsg" class="small muted"></p>
+      <button class="btn btn-red" onclick="location.reload()">Reintentar</button>
+    </div>
+    <div id="menuRoot"></div>
+  </main>
+
+  <!-- 悬浮购物车按钮 -->
+  <button id="cartFab" class="cart-fab" aria-label="Abrir carrito">
+    <svg viewBox="0 0 24 24"><path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49A1.003 1.003 0 0 0 20 4H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/></svg>
+    <span>Carrito</span>
+    <span id="cartCount" class="cart-count">0</span>
+  </button>
+
+  <!-- 购物车抽屉 -->
+  <div id="overlay" class="overlay"></div>
+  <aside id="cartDrawer" class="cart-drawer" aria-label="Carrito de compras">
+    <div class="cart-head">
+      <h2>🧾 Pedido (内部)</h2>
+      <button id="cartClose" class="cart-close" aria-label="Cerrar">✕</button>
+    </div>
+    <div class="cart-body">
+      <div id="cartEmpty" class="cart-empty">
+        <div class="big">🍽️</div>
+        Tu carrito está vacío.<br />Agrega algunos platos del menú.
+      </div>
+      <div id="cartLines"></div>
+
+      <div id="orderArea" class="order-area hidden">
+        <form id="orderForm" class="order-form" novalidate>
+          <h3>Datos del pedido</h3>
+          <div class="field">
+            <label for="custNote">Nota para la cocina <small>(opcional)</small></label>
+            <textarea id="custNote" rows="2" placeholder="Ej: sin cebolla, salsa aparte…"></textarea>
+          </div>
+        </form>
+        <div class="order-foot">
+          <p id="sentNote" class="sent-note hidden"></p>
+          <div class="total-box" id="cartTotalRow">
+            <div class="total-line"><span>Subtotal</span><b id="cartSubtotalText">$0</b></div>
+            <div class="total-line grand"><span>Total</span><b id="cartTotalText">$0</b></div>
+          </div>
+          <button id="waOrderBtn" class="btn btn-green btn-block" type="button">💬 Enviar pedido a cocina</button>
+          <button id="clearOrderBtn" class="btn btn-ghost btn-block" type="button" style="margin-top:8px;">🧹 Vaciar pedido / 清空当前单</button>
+          <p class="small muted" style="text-align:center;margin:8px 0 0;" id="orderNoteText"></p>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- 内部访问密码（简易门禁，非真正安全） -->
+  <div id="lockScreen" class="lock-overlay">
+    <div class="lock-card">
+      <div class="lock-logo">昌</div>
+      <h2>内部点单 · Uso interno</h2>
+      <p class="lock-sub">请输入员工密码 / Ingrese el PIN</p>
+      <input id="lockPin" type="password" inputmode="numeric" autocomplete="off" placeholder="PIN" />
+      <p id="lockErr" class="lock-err"></p>
+      <button id="lockBtn" class="btn btn-gold btn-block" type="button">进入 / Entrar</button>
+    </div>
+  </div>
+
+  <!-- 脚本：顺序很重要 -->
+  <script src="js/config.js?v=5"></script>
+  <script src="js/supabase.js?v=5"></script>
+  <script src="js/utils.js?v=5"></script>
+  <script src="js/demo-data.js?v=5"></script>
+  <script src="js/data.js?v=5"></script>
+  <script src="js/site.js?v=5"></script>
+</body>
+</html>
