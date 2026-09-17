@@ -7,5 +7,4 @@
 window.APP_CONFIG = {
   supabaseUrl: "https://irnugawsxorworartist.supabase.co",
   supabaseAnonKey: "sb_publishable_9OA5hDZ0_F1MOacwKIDMDg_S2vDTN_l",
-  internalPin: "2468", // 内部点单密码（可改；简易门禁，非真正安全）
 };

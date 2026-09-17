@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>昌盛 CHANG SHENG · 管理后台</title>
-  <link rel="stylesheet" href="css/admin.css?v=2" />
+  <link rel="stylesheet" href="css/admin.css?v=6" />
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚙️</text></svg>" />
 </head>
 <body>
@@ -68,6 +68,7 @@
     <section id="mainPanel" class="hidden">
       <div class="tabs">
         <button class="tab active" data-tab="menu">🍜 菜单管理</button>
+        <button class="tab" data-tab="drinks">🥤 饮料价格</button>
         <button class="tab" data-tab="settings">🏪 店铺设置</button>
         <button class="tab" data-tab="num">🔢 取餐号</button>
         <button class="tab" data-tab="stats">📊 访问统计</button>
@@ -130,6 +131,29 @@
             </table>
           </div>
           <p id="dishEmpty" class="muted small" style="display:none;">还没有菜品，点右上角“新增菜品”添加。</p>
+        </div>
+      </div>
+
+      <!-- 饮料价格（堂食 / 外卖） -->
+      <div class="tab-panel hidden" data-panel="drinks">
+        <div class="card">
+          <h2>🥤 饮料价格（堂食 / 外卖）</h2>
+          <p class="hint">这里分开管理饮料：<b>外卖价</b>用于顾客外卖站，<b>堂食价</b>用于内部堂食点单站。堂食价留空 = 自动跟外卖价一样。<b>改完自动保存、立刻生效</b>，不用改代码、不用改数据库。</p>
+          <p id="drinkMsg" class="small muted" style="margin:0 0 10px;"></p>
+          <div style="overflow-x:auto;">
+            <table class="tbl">
+              <thead>
+                <tr>
+                  <th>分类</th>
+                  <th>饮料</th>
+                  <th class="num">外卖价 (CLP)</th>
+                  <th class="num">堂食价 (CLP)</th>
+                </tr>
+              </thead>
+              <tbody id="drinkRows"></tbody>
+            </table>
+          </div>
+          <p id="drinksEmpty" class="muted small" style="display:none;">还没有饮料。请先到「菜单管理」建一个饮料分类（名字含 BEBIDAS / JUGOS / CERVEZAS / BEBER 等），再添加饮料菜品。</p>
         </div>
       </div>
 
@@ -225,6 +249,7 @@
             <li><b>改菜单：</b>切到“菜单管理”，可以新增/删除分类和菜品、改西语名/中文名/价格/描述/图片、勾选“在售”来下架某道菜（顾客端显示 Agotado）。</li>
             <li><b>编辑菜品快捷键：</b>编辑弹窗里按 <b>回车</b> = 快速保存；<b>备注框</b>按 <b>Ctrl+回车</b> 保存；点“‹ 上一个 / 下一个 ›”（或 <b>Alt+↑/↓</b>）快速切换菜品；Esc/空格 关闭。</li>
             <li><b>快速查找：</b>“菜品管理”右上角搜索框可按西语名或中文名实时过滤。</li>
+            <li><b>饮料价格：</b>切到“🥤 饮料价格”，同一杯饮料可分别填<b>外卖价</b>和<b>堂食价</b>（堂食价留空就跟外卖价一样）。</li>
             <li><b>改店铺信息：</b>切到“店铺设置”，修改店名、WhatsApp 号码、地址、营业时间和顶部公告，点保存。</li>
             <li><b>改完立刻生效：</b>所有修改保存后，顾客刷新网站就能看到最新内容，无需重新发布代码。</li>
             <li><b>菜品的图片：</b>在“编辑菜品”里粘贴图片网址（https://…）即可显示照片；留空则显示中文占位字。</li>
@@ -311,11 +336,11 @@
   <div id="toast" class="toast"></div>
 
   <!-- 脚本 -->
-  <script src="js/config.js?v=2"></script>
-  <script src="js/supabase.js?v=2"></script>
-  <script src="js/utils.js?v=2"></script>
-  <script src="js/demo-data.js?v=2"></script>
-  <script src="js/data.js?v=2"></script>
-  <script src="js/admin.js?v=2"></script>
+  <script src="js/config.js?v=6"></script>
+  <script src="js/supabase.js?v=6"></script>
+  <script src="js/utils.js?v=6"></script>
+  <script src="js/demo-data.js?v=6"></script>
+  <script src="js/data.js?v=6"></script>
+  <script src="js/admin.js?v=6"></script>
 </body>
 </html>

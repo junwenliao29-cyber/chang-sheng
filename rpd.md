@@ -136,3 +136,12 @@ supabase/migration-ordernum.sql 取餐号（保留备用）
 ---
 
 （本文档随代码一起提交到仓库；每次重要改动后建议让 AI 顺手更新本文件的“当前功能清单”。）
+
+---
+
+## 13. 内部堂食点单站（/interno/）
+
+- 地址：https://junwenliao29-cyber.github.io/chang-sheng/interno/ （员工用，已取消 PIN，打开即用）
+- 使用方法：顶部选桌号 → 点菜 → 打开购物车 → 发送到厨房 WhatsApp（消息含桌号/菜品/小计/总价）。
+- 饮料定位价：后台 `admin.html` →「🥤 饮料价格」标签页，同一杯饮料分「外卖价 / 堂食价」，堂食价留空=跟外卖价；自动保存到 `settings.dinein_prices`，只影响内部堂食站。
+- 顾客自助堂食版（扫码点单 + 10% 小费）保留在独立项目 git 提交 `a27237a`。

@@ -450,7 +450,6 @@
 
   /* ---------------- 事件绑定 ---------------- */
   function bindEvents() {
-    bindLock();
     bindInternalActions();
 
     // 打开/关闭抽屉
@@ -490,36 +489,6 @@
       else if (dec) changeQty(dec.getAttribute("data-dec"), -1);
       else if (del) removeLine(del.getAttribute("data-del"));
     });
-  }
-
-  /* ---------------- 内部版：密码门禁 + 新单 ---------------- */
-  function bindLock() {
-    const lock = $("#lockScreen");
-    if (!lock) return;
-    const cfg = window.APP_CONFIG || {};
-    const pin = String(cfg.internalPin || "2468");
-    let unlocked = false;
-    try { unlocked = sessionStorage.getItem("cs_internal_unlocked") === "1"; } catch (e) {}
-    if (unlocked) { lock.classList.add("hidden"); return; }
-    const tryUnlock = () => {
-      const inp = $("#lockPin");
-      const err = $("#lockErr");
-      const v = (inp && inp.value || "").trim();
-      if (v === pin) {
-        try { sessionStorage.setItem("cs_internal_unlocked", "1"); } catch (e) {}
-        lock.classList.add("hidden");
-      } else if (err) {
-        err.textContent = "密码错误 / PIN incorrecto";
-        if (inp) { inp.value = ""; inp.focus(); }
-      }
-    };
-    const btn = $("#lockBtn");
-    if (btn) btn.addEventListener("click", tryUnlock);
-    const inp = $("#lockPin");
-    if (inp) {
-      inp.addEventListener("keydown", (e) => { if (e.key === "Enter") tryUnlock(); });
-      setTimeout(() => inp.focus(), 60);
-    }
   }
 
   function bindInternalActions() {

@@ -16,6 +16,20 @@
   let editingDishId = null; // 正在编辑的菜品 id（null = 新增）
   let editingSnapshot = null; // 打开弹窗时该菜品的原始值，用于“未保存”提醒
   let toastTimer = null;
+  const DRINK_RE = /BEBER|BEBIDA|JUGO|JUGOS|CERVEZA|VINO|TRAGO|ALCOHOL|SOLO PARA LLEVAR/i;
+  function isDrinkCategory(c) { return !!c && (DRINK_RE.test(c.name_es || "") || DRINK_RE.test(c.name_zh || "")); }
+  function drinkDishes() {
+    const ids = {};
+    cats.forEach((c) => { if (isDrinkCategory(c)) ids[c.id] = true; });
+    return dishes.filter((d) => ids[d.category_id]);
+  }
+  // 堂食价存在 settings 表（key = dinein_prices，value = JSON），不需要改数据库结构
+  function dineinPriceMap() {
+    try {
+      const m = JSON.parse(settingsMap.dinein_prices || "{}");
+      return m && typeof m === "object" ? m : {};
+    } catch (e) { return {}; }
+  }
 
   /* ---------------- 提示消息 ---------------- */
   function toast(msg, type) {
@@ -229,6 +243,7 @@
       renderCats();
       renderDishFilter();
       renderDishes();
+      renderDrinks();
       renderSettingsForm();
     } catch (e) {
       toast(errMsg(e), "err");
@@ -723,6 +738,51 @@
       clearDishDragUI();
     });
   }
+  /* ---------------- 饮料价格（外卖 / 堂食） ---------------- */
+  function renderDrinks() {
+    const tbody = $("#drinkRows");
+    if (!tbody) return;
+    const list = drinkDishes();
+    const empty = $("#drinksEmpty");
+    if (empty) empty.style.display = list.length ? "none" : "block";
+    const msg = $("#drinkMsg");
+    if (msg) msg.textContent = list.length ? "共 " + list.length + " 款饮料 · 改完自动保存" : "";
+    const dineMap = dineinPriceMap();
+    tbody.innerHTML = list.map((d) => {
+      const take = d.price_clp === null || d.price_clp === undefined ? "" : d.price_clp;
+      const dine = dineMap[d.id] === null || dineMap[d.id] === undefined ? "" : dineMap[d.id];
+      const zh = d.name_zh ? '<div class="small muted">' + U.escapeHTML(d.name_zh) + "</div>" : "";
+      return '<tr data-drink-id="' + U.escapeHTML(d.id) + '">' +
+        "<td>" + U.escapeHTML(catName(d.category_id)) + "</td>" +
+        "<td><b>" + U.escapeHTML(d.name_es) + "</b>" + zh + "</td>" +
+        '<td><input type="number" min="0" step="100" class="drink-take" value="' + U.escapeHTML(String(take)) + '" /></td>' +
+        '<td><input type="number" min="0" step="100" class="drink-dine" placeholder="= 外卖价" value="' + U.escapeHTML(String(dine)) + '" /></td>' +
+        "</tr>";
+    }).join("");
+  }
+  async function saveDrinkTakePrice(id, value) {
+    if (!client) return;
+    try {
+      const { error } = await client.from("dishes").update({ price_clp: value }).eq("id", id);
+      if (error) throw error;
+      toast("外卖价已保存 ✅");
+      await refresh();
+    } catch (e) { toast(errMsg(e), "err"); await refresh(); }
+  }
+  async function saveDrinkDinePrice(id, value) {
+    if (!client) return;
+    const map = dineinPriceMap();
+    if (value === null || value === "" || isNaN(Number(value))) delete map[id];
+    else map[id] = Number(value);
+    try {
+      const { error } = await client.from("settings").upsert({ key: "dinein_prices", value: JSON.stringify(map) }, { onConflict: "key" });
+      if (error) throw error;
+      settingsMap.dinein_prices = JSON.stringify(map);
+      toast("堂食价已保存 ✅");
+      renderDrinks();
+    } catch (e) { toast(errMsg(e), "err"); }
+  }
+
   /* ---------------- 店铺设置 ---------------- */
   function renderSettingsForm() {
     $("#set_store_name").value = settingsMap.store_name || "";
@@ -836,6 +896,7 @@
         });
         if (t.getAttribute("data-tab") === "stats") loadStats();
         else if (t.getAttribute("data-tab") === "num") loadNumStatus();
+        else if (t.getAttribute("data-tab") === "drinks") renderDrinks();
         window.scrollTo({ top: 0, behavior: "smooth" });
       });
     });
@@ -896,6 +957,16 @@
     // 拖动排序绑定
     bindCatDrag();
     bindDishDrag();
+
+    // 饮料价格：外卖价 / 堂食价（自动保存）
+    const drinkRows = $("#drinkRows");
+    if (drinkRows) drinkRows.addEventListener("change", (e) => {
+      const inp = e.target.closest(".drink-take, .drink-dine");
+      if (!inp) return;
+      const id = inp.closest("tr").getAttribute("data-drink-id");
+      if (inp.classList.contains("drink-take")) saveDrinkTakePrice(id, U.toInt(inp.value));
+      else saveDrinkDinePrice(id, inp.value.trim());
+    });
 
     // 排序数字输入：修改后自动保存
     $("#dishRows").addEventListener("change", (e) => {
