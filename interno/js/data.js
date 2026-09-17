@@ -21,6 +21,15 @@
       return m && typeof m === "object" ? m : {};
     } catch (e) { return {}; }
   }
+  function parseDineinCustom(raw) {
+    try {
+      const o = JSON.parse(raw || "{}");
+      return {
+        categories: Array.isArray(o.categories) ? o.categories : [],
+        dishes: Array.isArray(o.dishes) ? o.dishes : [],
+      };
+    } catch (e) { return { categories: [], dishes: [] }; }
+  }
   function applyDineInPrices(categories, dishes, dineMap) {
     const byId = {};
     (categories || []).forEach(function (c) { byId[c.id] = c; });
@@ -49,7 +58,12 @@
     const categories = catRes.data || [];
     const dineMap = parseDineinPrices(settings.dinein_prices);
     const dishes = applyDineInPrices(categories, dishRes.data || [], dineMap);
-    return { settings: settings, categories: categories, dishes: dishes };
+    const custom = parseDineinCustom(settings.dinein_custom_menu);
+    return {
+      settings: settings,
+      categories: categories.concat(custom.categories),
+      dishes: dishes.concat(custom.dishes),
+    };
   }
 
   async function loadDemoMenu() {

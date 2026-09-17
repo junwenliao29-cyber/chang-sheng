@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>昌盛 CHANG SHENG · 管理后台</title>
-  <link rel="stylesheet" href="css/admin.css?v=6" />
+  <link rel="stylesheet" href="css/admin.css?v=7" />
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚙️</text></svg>" />
 </head>
 <body>
@@ -154,6 +154,34 @@
             </table>
           </div>
           <p id="drinksEmpty" class="muted small" style="display:none;">还没有饮料。请先到「菜单管理」建一个饮料分类（名字含 BEBIDAS / JUGOS / CERVEZAS / BEBER 等），再添加饮料菜品。</p>
+        </div>
+
+        <!-- 堂食专属菜单（只显示在堂食链接） -->
+        <div class="card">
+          <h2>🍽️ 堂食专属菜单（只显示在堂食链接）</h2>
+          <p class="hint">在这里加的品类和菜品/饮料<b>只出现在内部堂食点单站</b>，不会出现在外卖站。价格就是堂食价；改完点“保存堂食专属菜单”。</p>
+
+          <h3 style="margin:14px 0 8px;">品类</h3>
+          <div style="overflow-x:auto;">
+            <table class="tbl">
+              <thead><tr><th>西语名</th><th>中文名</th><th style="width:80px;">排序</th><th style="width:80px;">操作</th></tr></thead>
+              <tbody id="dcCatRows"></tbody>
+            </table>
+          </div>
+          <div style="margin-top:10px;"><button class="btn btn-ghost" id="dcAddCatBtn">＋ 新增品类</button></div>
+
+          <h3 style="margin:20px 0 8px;">菜品 / 饮料</h3>
+          <div style="overflow-x:auto;">
+            <table class="tbl">
+              <thead><tr><th style="width:150px;">品类</th><th>西语名</th><th>中文名</th><th class="num">价格 (CLP)</th><th>图片网址</th><th style="text-align:center;">在售</th><th style="width:70px;">排序</th><th style="width:80px;">操作</th></tr></thead>
+              <tbody id="dcDishRows"></tbody>
+            </table>
+          </div>
+          <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="btn btn-ghost" id="dcAddDishBtn">＋ 新增菜品 / 饮料</button>
+            <button class="btn btn-primary" id="dcSaveBtn">💾 保存堂食专属菜单</button>
+          </div>
+          <p class="small muted" id="dcMsg" style="margin-top:8px;"></p>
         </div>
       </div>
 
@@ -336,11 +364,11 @@
   <div id="toast" class="toast"></div>
 
   <!-- 脚本 -->
-  <script src="js/config.js?v=6"></script>
-  <script src="js/supabase.js?v=6"></script>
-  <script src="js/utils.js?v=6"></script>
-  <script src="js/demo-data.js?v=6"></script>
-  <script src="js/data.js?v=6"></script>
-  <script src="js/admin.js?v=6"></script>
+  <script src="js/config.js?v=7"></script>
+  <script src="js/supabase.js?v=7"></script>
+  <script src="js/utils.js?v=7"></script>
+  <script src="js/demo-data.js?v=7"></script>
+  <script src="js/data.js?v=7"></script>
+  <script src="js/admin.js?v=7"></script>
 </body>
 </html>

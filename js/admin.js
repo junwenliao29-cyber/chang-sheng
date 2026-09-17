@@ -12,6 +12,7 @@
   let cats = [];
   let dishes = [];
   let settingsMap = {};
+  let dineinCustom = null;
 
   let editingDishId = null; // 正在编辑的菜品 id（null = 新增）
   let editingSnapshot = null; // 打开弹窗时该菜品的原始值，用于“未保存”提醒
@@ -235,6 +236,7 @@
     dishes = dishRes.data || [];
     settingsMap = {};
     (setRes.data || []).forEach((r) => { settingsMap[r.key] = r.value; });
+    dineinCustom = parseDineinCustom(settingsMap.dinein_custom_menu);
   }
 
   async function refresh() {
@@ -244,6 +246,7 @@
       renderDishFilter();
       renderDishes();
       renderDrinks();
+      renderDineinCustom();
       renderSettingsForm();
     } catch (e) {
       toast(errMsg(e), "err");
@@ -783,6 +786,105 @@
     } catch (e) { toast(errMsg(e), "err"); }
   }
 
+  /* ---------------- 堂食专属菜单（只显示在堂食链接） ---------------- */
+  function parseDineinCustom(raw) {
+    try {
+      const o = JSON.parse(raw || "{}");
+      return {
+        categories: Array.isArray(o.categories) ? o.categories : [],
+        dishes: Array.isArray(o.dishes) ? o.dishes : [],
+      };
+    } catch (e) { return { categories: [], dishes: [] }; }
+  }
+  function dcId(prefix) { return prefix + "-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 7); }
+  function dcCatOptions(selected) {
+    const list = (dineinCustom && dineinCustom.categories) || [];
+    return list.map((c) => '<option value="' + U.escapeHTML(c.id) + '"' + (c.id === selected ? " selected" : "") + ">" + U.escapeHTML((c.name_zh ? c.name_zh + " / " : "") + c.name_es) + "</option>").join("");
+  }
+  function renderDineinCustom() {
+    const catBody = $("#dcCatRows");
+    const dishBody = $("#dcDishRows");
+    if (!catBody || !dishBody) return;
+    if (!dineinCustom) dineinCustom = { categories: [], dishes: [] };
+    catBody.innerHTML = dineinCustom.categories.map((c, i) =>
+      '<tr data-id="' + U.escapeHTML(c.id) + '">' +
+      '<td><input class="dc-cat-es" type="text" value="' + U.escapeHTML(c.name_es || "") + '" placeholder="Ej: JUGOS NATURALES" /></td>' +
+      '<td><input class="dc-cat-zh" type="text" value="' + U.escapeHTML(c.name_zh || "") + '" placeholder="果汁" /></td>' +
+      '<td><input class="dc-cat-sort" type="number" value="' + U.escapeHTML(String(c.sort_order || i + 1)) + '" /></td>' +
+      '<td><button type="button" class="btn btn-sm btn-danger dc-cat-del">删除</button></td></tr>'
+    ).join("");
+    dishBody.innerHTML = dineinCustom.dishes.map((d, i) =>
+      '<tr data-id="' + U.escapeHTML(d.id) + '">' +
+      '<td><select class="dc-dish-cat">' + dcCatOptions(d.category_id) + "</select></td>" +
+      '<td><input class="dc-dish-es" type="text" value="' + U.escapeHTML(d.name_es || "") + '" /></td>' +
+      '<td><input class="dc-dish-zh" type="text" value="' + U.escapeHTML(d.name_zh || "") + '" /></td>' +
+      '<td><input class="dc-dish-price num" type="number" min="0" step="100" value="' + U.escapeHTML(String(d.price_clp == null ? "" : d.price_clp)) + '" /></td>' +
+      '<td><input class="dc-dish-img" type="url" value="' + U.escapeHTML(d.image_url || "") + '" placeholder="https://…" /></td>' +
+      '<td style="text-align:center;"><input class="dc-dish-avail" type="checkbox"' + (d.available === false ? "" : " checked") + " /></td>" +
+      '<td><input class="dc-dish-sort" type="number" value="' + U.escapeHTML(String(d.sort_order || i + 1)) + '" /></td>' +
+      '<td><button type="button" class="btn btn-sm btn-danger dc-dish-del">删除</button></td></tr>'
+    ).join("");
+    const msg = $("#dcMsg");
+    if (msg) msg.textContent = "堂食专属：品类 " + dineinCustom.categories.length + " · 菜品/饮料 " + dineinCustom.dishes.length + "（只显示在堂食链接）";
+  }
+  function collectDineinCustom() {
+    const catRows = Array.prototype.slice.call(document.querySelectorAll("#dcCatRows tr"));
+    const categories = catRows.map((tr, i) => ({
+      id: tr.getAttribute("data-id") || dcId("dcat"),
+      name_es: tr.querySelector(".dc-cat-es").value.trim(),
+      name_zh: tr.querySelector(".dc-cat-zh").value.trim(),
+      sort_order: U.toInt(tr.querySelector(".dc-cat-sort").value) || (i + 1),
+    })).filter((c) => c.name_es);
+    const dishRows = Array.prototype.slice.call(document.querySelectorAll("#dcDishRows tr"));
+    const dishes = dishRows.map((tr, i) => ({
+      id: tr.getAttribute("data-id") || dcId("ddish"),
+      category_id: tr.querySelector(".dc-dish-cat").value,
+      name_es: tr.querySelector(".dc-dish-es").value.trim(),
+      name_zh: tr.querySelector(".dc-dish-zh").value.trim(),
+      description: "",
+      price_clp: U.toInt(tr.querySelector(".dc-dish-price").value),
+      image_url: tr.querySelector(".dc-dish-img").value.trim(),
+      available: tr.querySelector(".dc-dish-avail").checked,
+      sort_order: U.toInt(tr.querySelector(".dc-dish-sort").value) || (i + 1),
+    })).filter((d) => d.name_es && d.category_id);
+    return { categories: categories, dishes: dishes };
+  }
+  function addDineinCat() {
+    dineinCustom = collectDineinCustom();
+    dineinCustom.categories.push({ id: dcId("dcat"), name_es: "", name_zh: "", sort_order: dineinCustom.categories.length + 1 });
+    renderDineinCustom();
+  }
+  function addDineinDish() {
+    dineinCustom = collectDineinCustom();
+    const cat = dineinCustom.categories[0];
+    if (!cat) { toast("请先新增一个堂食专属品类", "err"); return; }
+    dineinCustom.dishes.push({ id: dcId("ddish"), category_id: cat.id, name_es: "", name_zh: "", description: "", price_clp: "", image_url: "", available: true, sort_order: dineinCustom.dishes.length + 1 });
+    renderDineinCustom();
+  }
+  function deleteDineinRow(tr, kind) {
+    if (!tr) return;
+    const id = tr.getAttribute("data-id");
+    const cur = collectDineinCustom();
+    if (kind === "cat") {
+      cur.categories = cur.categories.filter((c) => c.id !== id);
+      cur.dishes = cur.dishes.filter((d) => d.category_id !== id);
+    } else {
+      cur.dishes = cur.dishes.filter((d) => d.id !== id);
+    }
+    dineinCustom = cur;
+    renderDineinCustom();
+  }
+  async function saveDineinCustom() {
+    if (!client) return;
+    dineinCustom = collectDineinCustom();
+    try {
+      const { error } = await client.from("settings").upsert({ key: "dinein_custom_menu", value: JSON.stringify(dineinCustom) }, { onConflict: "key" });
+      if (error) throw error;
+      settingsMap.dinein_custom_menu = JSON.stringify(dineinCustom);
+      toast("堂食专属菜单已保存 ✅（只影响堂食链接）");
+      renderDineinCustom();
+    } catch (e) { toast(errMsg(e), "err"); }
+  }
   /* ---------------- 店铺设置 ---------------- */
   function renderSettingsForm() {
     $("#set_store_name").value = settingsMap.store_name || "";
@@ -896,7 +998,7 @@
         });
         if (t.getAttribute("data-tab") === "stats") loadStats();
         else if (t.getAttribute("data-tab") === "num") loadNumStatus();
-        else if (t.getAttribute("data-tab") === "drinks") renderDrinks();
+        else if (t.getAttribute("data-tab") === "drinks") { renderDrinks(); renderDineinCustom(); }
         window.scrollTo({ top: 0, behavior: "smooth" });
       });
     });
@@ -967,6 +1069,18 @@
       if (inp.classList.contains("drink-take")) saveDrinkTakePrice(id, U.toInt(inp.value));
       else saveDrinkDinePrice(id, inp.value.trim());
     });
+
+    // 堂食专属菜单（只显示在堂食链接）
+    const dcAddCat = $("#dcAddCatBtn");
+    if (dcAddCat) dcAddCat.addEventListener("click", addDineinCat);
+    const dcAddDish = $("#dcAddDishBtn");
+    if (dcAddDish) dcAddDish.addEventListener("click", addDineinDish);
+    const dcSave = $("#dcSaveBtn");
+    if (dcSave) dcSave.addEventListener("click", saveDineinCustom);
+    const dcCats = $("#dcCatRows");
+    if (dcCats) dcCats.addEventListener("click", (e) => { const b = e.target.closest(".dc-cat-del"); if (b) deleteDineinRow(b.closest("tr"), "cat"); });
+    const dcDishes = $("#dcDishRows");
+    if (dcDishes) dcDishes.addEventListener("click", (e) => { const b = e.target.closest(".dc-dish-del"); if (b) deleteDineinRow(b.closest("tr"), "dish"); });
 
     // 排序数字输入：修改后自动保存
     $("#dishRows").addEventListener("change", (e) => {
